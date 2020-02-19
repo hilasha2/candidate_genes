@@ -25,29 +25,13 @@ title = sprintf('clustergram on all 70%% top %s patients', gene_name);
 getClustergram(top70Data, geneNames, patientsNamesTop70,...
     'zscored top 70%', title); 
 
-
-% --------- PCA analysis
-
-for numGroups = 3:5
-    title = sprintf('PCA with k-means, numGroups = %d', numGroups);
-    getPCA(numGroups, numericData, title);
-end
-
-%  PCA on top %30 MET data
-for numGroups = 3:5
-    title = sprintf('PCA with k-means, top 30% %s patients, numGroups = %d', ...
-        gene_name, numGroups);
-    getPCA(numGroups, top30Data, title);
-end
-
-
 % ---------- TSNE
 
-getTsne(numericData, numGroups,...
-    'TSNE','TSNE with KMeans');
-numGroupsTop30 = 4;
-getTsne(top30Data, numGroupsTop30,...
-    'TSNE top 30%','TSNE top 30% with KMeans');
+% getTsne(numericData, numGroups,...
+%     'TSNE','TSNE with KMeans');
+% numGroupsTop30 = 4;
+% getTsne(top30Data, numGroupsTop30,...
+%     'TSNE top 30%','TSNE top 30% with KMeans');
 
 
 % ---------- Bar and Box plots
@@ -114,32 +98,20 @@ addTitle(CGobj, titleCG);
 end
 
 
-function getPCA(numGroups, numericData, plotTitle)
-% pca - rows - observations, columns - variables. 
-[~, zscores, pcvars] = pca(numericData');
-perc = pcvars./sum(pcvars) * 100;
-idx = kmeans(numericData', numGroups, 'Distance','sqeuclidean');
-figure('Name', plotTitle, 'visible', 'off');
-gscatter(zscores(:,1),zscores(:,2),idx);
-xlabel(['First Principal Component ' num2str(perc(1)) '%']);
-ylabel(['Second Principal Component ' num2str(perc(2)) '%']);
-title(plotTitle);
-end
-
 % TODO - improve this function. 
-function getTsne(numericData, numGroups, titleTsne, titleKmeans)
-zscored = zscore(numericData'); % zscored - n * p 
-wcoeff = pca(zscored); % wcoeff - p * p, columns - coefficients for one principal component.
-tsne_z = tsne(wcoeff,'Distance','euclidean');
-cls = clusterdata(tsne_z(:,1:2),'maxclust',numGroups,'distance','euclidean');
-figure('Name', titleTsne, 'visible', 'off');
-gscatter(tsne_z(:,1),tsne_z(:,2),cls)
-title(titleTsne)
-idx = kmeans(tsne_z(:,1:2),numGroups); % kmeans clustering partition the observations, idx - n * 1.
-figure('Name', titleKmeans, 'visible', 'off');
-gscatter(tsne_z(:,1),tsne_z(:,2),idx)
-title(titleKmeans)
-end
+% function getTsne(numericData, numGroups, titleTsne, titleKmeans)
+% zscored = zscore(numericData'); % zscored - n * p 
+% wcoeff = pca(zscored); % wcoeff - p * p, columns - coefficients for one principal component.
+% tsne_z = tsne(wcoeff,'Distance','euclidean');
+% cls = clusterdata(tsne_z(:,1:2),'maxclust',numGroups,'distance','euclidean');
+% figure('Name', titleTsne, 'visible', 'off');
+% gscatter(tsne_z(:,1),tsne_z(:,2),cls)
+% title(titleTsne)
+% idx = kmeans(tsne_z(:,1:2),numGroups); % kmeans clustering partition the observations, idx - n * 1.
+% figure('Name', titleKmeans, 'visible', 'off');
+% gscatter(tsne_z(:,1),tsne_z(:,2),idx)
+% title(titleKmeans)
+% end
 
 
 function table = getBarPlot(topData, lowData, geneNames, titlePlot, inputFile, ...
@@ -170,16 +142,16 @@ xlabel('Gene Names');
 ylabel('Expression of Genes');
 title(titlePlot);
 geneName = sprintf('%s', gene_name);
-table = {inputFile, '', '', '';'data split according to', geneName, '', ''};
+table = {inputFile, '', '', '', '', '';'data split according to', geneName, '', '', '', ''};
 numHighPatientsStr = sprintf('no. of high-%s patients', gene_name);
 numLowPatientsStr = sprintf('no. of low-%s patients', gene_name);
-table = [table; {'top percentage', numHighPatientsStr, 'low percentage', numLowPatientsStr}];
-table = [table; {topPerc, size(topData, 2), 100-topPerc, size(lowData, 2)}];
-table = [table; {'Gene Names', 'Ratio high/low', 'P-value', 'Significant'}];
+table = [table; {'top percentage', numHighPatientsStr, 'low percentage', numLowPatientsStr, '', ''}];
+table = [table; {topPerc, size(topData, 2), 100-topPerc, size(lowData, 2), '', ''}];
+table = [table; {'Gene Names', 'mean high expression', 'mean low expression', 'Ratio high/low', 'P-value', 'Significant'}];
 % bool = (pvalues < 0.05 & pvalues <= pvalues(geneIdx));
 bool = (pvalues < 0.05);
-tmp = [geneNames, num2cell(topMean./lowMean), num2cell(pvalues'), num2cell(bool')];
-tmp = sortrows(tmp, 3);
+tmp = [geneNames, num2cell(topMean), num2cell(lowMean), num2cell(topMean./lowMean), num2cell(pvalues'), num2cell(bool')];
+tmp = sortrows(tmp, 5); % sort by p-values
 table = [table; tmp];
 xlswrite(outputFile, table);
 end

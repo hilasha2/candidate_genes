@@ -139,7 +139,7 @@ mkdir(outputDir);
 % -------- Reading clinical data
 if do_clinical_calculations || do_mutation_and_clinical_analysis || do_km_by_clustering
 
-    [numericDataKM, txtDataKM] = xlsread(filename_km);
+    [numericDataKM, txtDataKM] = xlsread(filename_km, 1);
     
     % timeData - Time failure in Kaplan Meier analysis, in our case:
     % Overall survival in months since the initial diagnosis.
@@ -279,13 +279,13 @@ end
 
 %% ---------- Kaplan Meier analysis by clustering
 if do_km_by_clustering
-    kaplan_meier_by_clustering(filename_km, outputDir, numericData, geneNames, patientsNames, ....
-    patientsNamesKM, timeData, cens, timeCutOff) 
+       kaplan_meier_by_clustering(outputDir, numericData, geneNames, patientsNames, ....
+    patientsNamesKM, timeData, cens, timeCutOff)
 end
 
 %% Saving all opened figures as images and to a powerpoint file.
 
-FolderName = strcat(outputDir,'\graphs');   % Destination folder for plots
+FolderName = strcat(outputDir,'\graphs2');   % Destination folder for plots
 mkdir(FolderName); 
 
 % firstSlideTxt = {date};
