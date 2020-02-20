@@ -61,8 +61,6 @@
 % * use_cbioportal_not_lab_std - Whether to use the standard of data
 % sources as in cbiportal or the standard that will be decided in the lab.
 % 1 is cbioportal, 0 is lab standard.
-% * ppt_template - The template for which all the graphs will be outputed
-% to.
 % * rowMutationsData - The row in filename_mut where the data begins.
 % * getGeneImages - Char cell array of gene names whose output images are desired, i.e.
 % {'ODC1', 'BCAT1', 'COL29A1'}. If all gene images are desired then write
@@ -72,7 +70,7 @@
 % * do_km_by_clustering - Whether to do kaplan meier calculations based on
 % clustering of filename. Needs filename_km for survival data. 
 
-function Candidate_Genes(filename, filename_km, sheet_name,ppt_template, ...
+function Candidate_Genes(filename, filename_km, sheet_name, ...
     do_genes_expression_calculations, do_clinical_calculations, ... 
     do_subtype_histograms, use_cbioportal_not_lab_std,...
     gene_nomenclature, gene_name, colPatientsNamesKM,...
@@ -215,11 +213,6 @@ end
 
 close all hidden;
 
-% -------- Opening a powerpoint file.
-% toPPT('close',1);
-% toPPT('openExisting',ppt_template);
-% toPPT('setTitle','Candidate Genes');
-
 %% -------- Genes expressions calculations
 % -------- splitting it into different expression percetages of MET expressions.
 
@@ -249,7 +242,8 @@ if do_genes_expression_calculations
     low80Data, patientsNamesTop20, top10Data, low90Data, patientsNamesTop10, ...
     top80Data, low20Data, patientsNamesTop80, top70Data, low30Data, patientsNamesTop70);
 end
-%% --------- Clinical calculations 
+
+%% --------- Clinical calculations
 if do_clinical_calculations
     kaplan_meier_data_analysis(filename_km, outputDir, numericData, geneNames, patientsNames, ....
     patientsNamesKM, timeData, cens, timeCutOff, patientsNamesTop30, patientsNamesLow70,...
@@ -283,23 +277,12 @@ if do_km_by_clustering
     patientsNamesKM, timeData, cens, timeCutOff)
 end
 
-%% Saving all opened figures as images and to a powerpoint file.
+%% Saving all opened figures as images
 
 FolderName = strcat(outputDir,'\graphs');   % Destination folder for plots
 mkdir(FolderName); 
-
-% firstSlideTxt = {date};
-% firstSlideTxt = addSource(firstSlideTxt, do_genes_expression_calculations, filename);
-% firstSlideTxt = addSource(firstSlideTxt, do_clinical_calculations, filename_km);
-% firstSlideTxt = addSource(firstSlideTxt, do_mutation_analysis, filename_mut);
-
-% toPPT(firstSlideTxt, 'setBullets', 0, 'Tex', 0);
-
-% SlideNumber = 3;
-
 FigList = findobj(allchild(0), 'flat', 'Type', 'figure'); % Getting all the opened figures, from last created to first.
 FigList = flip(FigList); % Fliping the order of the figures.
-
 
 if iscell(getGeneImages)
     if isempty(getGeneImages) 
@@ -312,16 +295,8 @@ if iscell(getGeneImages)
                     disp("Saving all images");
             end
             for iFig = 1:length(FigList)
-            FigHandle = FigList(iFig);
-            FigName = get(FigHandle, 'Name');
-
-            %   Change slide number when we reach the following figures. - TODO
-            %   FigNum = [9, 12, 15, 19, 21, 23, 25, 28, 43, 68, 83, 98, 114, 130, 145, 161, 177, 193, 218, 234, 249, 265, 280, 281];
-            %   if ismember(iFig, FigNum)
-            %       SlideNumber = SlideNumber + 1;
-            %   end
-            %   toPPT(FigHandle, 'SlideNumber', SlideNumber, 'exportMode', 'matlab', 'ExportFormatType', 'png');
-        
+                FigHandle = FigList(iFig);
+                FigName = get(FigHandle, 'Name');
                 % prerequisite - no gene is called "all". 
                 if contains(FigName, getGeneImages) || unique(eq(getGeneImages{1}, "all"))
                     disp(FigName);
@@ -332,9 +307,6 @@ if iscell(getGeneImages)
     end 
 end
 
-
-% Closing PPT
-% toPPT('close',1);
 disp('Done!');
 end
 
@@ -376,13 +348,4 @@ end
 function bool = findEmptyString(str)
     bool = (str == "NA") | (str == "Nan") | (str == "NaN") | (str == "[Not Available]")...
         | (str == "") | (str == "Not Available");
-end
-
-% A function used to add some information regarding the file sources that
-% were used in the calculation. The info is added to the power point file.
-function slideTxtCell = addSource(slideTxtCell, source_used_bool, source)
-    if source_used_bool
-        slideTxtCell{end + 1} = '';
-        slideTxtCell{end + 1} = source;
-    end
 end
