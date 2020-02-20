@@ -105,7 +105,7 @@ end
     get_time_cens_groups(patientsNames, patientsNamesKM, groupsIdx, timeData, cens);
 kaplan_meier(timeVar, censVar, groupVar, timeCutOff, kmPlotTitle)
 silhouetteTitle = sprintf('Silohouette of - %s', clusteringPlotTitle); 
-figure('Name', silhouetteTitle);
+figure('Name', silhouetteTitle, 'visible', off);
 silhouette(numericData', groupsIdx);
 title(silhouetteTitle);
 if(numGroups == 2)

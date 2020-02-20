@@ -285,7 +285,7 @@ end
 
 %% Saving all opened figures as images and to a powerpoint file.
 
-FolderName = strcat(outputDir,'\graphs2');   % Destination folder for plots
+FolderName = strcat(outputDir,'\graphs');   % Destination folder for plots
 mkdir(FolderName); 
 
 % firstSlideTxt = {date};
