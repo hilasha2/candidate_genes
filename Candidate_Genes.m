@@ -15,8 +15,8 @@
 % * filename_km - fullpath of the clinical data with survival analysis.
 % * do_genes_expression_calculations - Whether to do gene expressions
 % calculations from filename.
-% * do_clinical_calculations - whether to do clinical data calculations from filename_km,
-% includes Kaplan Meier analysis. 
+% * do_km_analysis - Whether to do kaplan meier analysis based on driver and
+% canditate genes expressions according to survival data found in filename_km,
 % * do_subtype_histograms - whether to do cancer's subtypes histogram calculations. 
 % * use_days_not_months - whether to use the 'days' column (OS_DAYS)  in
 % filname_km instead of the months column (OS_MONTHS). Only reason to use - more data
@@ -65,20 +65,20 @@
 % * getGeneImages - Char cell array of gene names whose output images are desired, i.e.
 % {'ODC1', 'BCAT1', 'COL29A1'}. If all gene images are desired then write
 % {'all'}, and if no image is desired write {'none'}.
-% * do_mutation_and_clinical_analysis - boolean. Whether to calculate KM of the data
+% * do_km_by_mutation_and_expression - boolean. Whether to calculate KM of the data
 % where expression levels and mutations of the genes are combined.
 % * do_km_by_clustering - Whether to do kaplan meier calculations based on
 % clustering of filename. Needs filename_km for survival data. 
 
 function Candidate_Genes(filename, filename_km, sheet_name, ...
-    do_genes_expression_calculations, do_clinical_calculations, ... 
+    do_genes_expression_calculations, do_km_analysis, ... 
     do_subtype_histograms, use_cbioportal_not_lab_std,...
     gene_nomenclature, gene_name, colPatientsNamesKM,...
     colTimeData, colSurvivalStatus, colCancerSubtypes, livingStatusStr, ...
     deceasedButNotCancerStr, timeCutOff, use_days_not_months, outputDir,...
     extraClinicalDataCellMatrix, do_mutation_analysis, colMutationsTypes,...
     colPatientsNamesMutation, colGeneNamesMut, filename_mut, rowMutationsData, ...
-    getGeneImages, do_mutation_and_clinical_analysis, do_km_by_clustering)
+    getGeneImages, do_km_by_mutation_and_expression, do_km_by_clustering)
 mkdir(outputDir);
 !taskkill -f -im EXCEL.exe
 %% -------- Reading the data
@@ -135,7 +135,7 @@ mkdir(outputDir);
     numericData = zscore(numericData, 0, 1); % Might contain 'NaN' data. 
 
 % -------- Reading clinical data
-if do_clinical_calculations || do_mutation_and_clinical_analysis || do_km_by_clustering
+if do_km_analysis || do_km_by_mutation_and_expression || do_km_by_clustering
 
     [numericDataKM, txtDataKM] = xlsread(filename_km, 1);
     
@@ -178,7 +178,7 @@ end
 
 % -------- Reading Mutation Data
 
-if do_mutation_analysis || do_mutation_and_clinical_analysis
+if do_mutation_analysis || do_km_by_mutation_and_expression
     [numericDataMut, txtDataMut] = xlsread(filename_mut); 
      
     % predicate
@@ -244,20 +244,19 @@ if do_genes_expression_calculations
 end
 
 %% --------- Clinical calculations
-if do_clinical_calculations
+if do_km_analysis
     kaplan_meier_data_analysis(filename_km, outputDir, numericData, geneNames, patientsNames, ....
     patientsNamesKM, timeData, cens, timeCutOff, patientsNamesTop30, patientsNamesLow70,...
     patientsNamesTop20, patientsNamesLow80, patientsNamesTop10, patientsNamesLow90,...
     patientsNamesTop80, patientsNamesLow20, patientsNamesTop70, patientsNamesLow30,...
     gene_name);
+end 
 
-% --------- Subtype calculations
+%% --------- Subtype calculations
     if do_subtype_histograms
         cancer_subtypes_analysis(filename_km, outputDir, numericData, patientsNames, geneNames,...
         txtDataKM, patientsNamesKM, geneIdx, colCancerSubtypes, use_cbioportal_not_lab_std, gene_name);
     end
-
-end 
 
 %% --------- Mutation calculations
 if do_mutation_analysis
@@ -266,7 +265,7 @@ if do_mutation_analysis
 end
 
 %% ---------- Mutation and Clinical Data calculations
-if do_mutation_and_clinical_analysis
+if do_km_by_mutation_and_expression
    kaplan_meier_and_mutation_analysis(filename_km, filename_mut, outputDir, gene_name, numericData, ...
     patientsNames, patientsNamesMut, patientsNamesKM, geneNames, geneNamesMut, timeData, cens, timeCutOff); 
 end
