@@ -63,7 +63,7 @@ groups = unique(groupsIdx);
 numGroups = length(groups);
 timeVar = [];
 censVar = [];
-groupVar = []; 
+groupVar = [];
 for idx = 1:numGroups
     patientsInGroups = patientsNames(groupsIdx == idx); 
     [timeGroup, censGroup] = KM_support_functions.get_time_and_cens(...
@@ -105,41 +105,103 @@ end
     get_time_cens_groups(patientsNames, patientsNamesKM, groupsIdx, timeData, cens);
 kaplan_meier(timeVar, censVar, groupVar, timeCutOff, kmPlotTitle)
 silhouetteTitle = sprintf('Silohouette of - %s', clusteringPlotTitle); 
-figure('Name', silhouetteTitle, 'visible', off);
+figure('Name', silhouetteTitle, 'visible', 'off');
 silhouette(numericData', groupsIdx);
 title(silhouetteTitle);
 if(numGroups == 2)
-    averageGeneExpressionForEachGroup(geneNames, numericData, groupsIdx, outputFile)
+    descriptiveStatisticsForGroups(geneNames, numericData, groupsIdx, outputFile);
+    patientsGroups(patientsNames, groupsIdx, outputFile);
 end
 end 
 
-
-function averageGeneExpressionForEachGroup(geneNames, numericData, groupsIdx, outputFile)
+% Calculating average, standard deviation, standard error, t-test (for 2
+% groups), and anova for each gene in groups.
+function descriptiveStatisticsForGroups(geneNames, numericData, groupsIdx, outputFile)
 groups = unique(groupsIdx);
 numGroups = length(groups);
-numericDataTransposed = numericData';
-averages_per_gene = [];
-
+numPatients = size(numericData, 2);
+range_groups = 1:numGroups;
+numericDataTransposed = numericData'; % rows - patients, % cols - genes
+% Average, standard deviation and error of gene expression per gene per
+% group
+averages_per_group = [];
+std_per_group = [];
+stde_per_group = [];
+ 
+% Handling the table for the results 
 tbl1 = ["Gene Names"; geneNames];
-tbl2 = ["Average of gene expression for group"; "Standard Deviation for group"];
-for idx = 1:numGroups
-    % Gene expression table for the patients in group #idx
+template_headers = ["Average of gene expression for group", ...
+    "Standard Deviation for group", "Standard Error for group"];
+tmp_headers_repeated = repelem(template_headers, numGroups);
+tmp_groups_repeated = repmat(range_groups, 1, length(template_headers));
+% headers should look like: ["hello 1", "hello 2", "world 1", "world 2"] 
+headers = tmp_headers_repeated + " " + tmp_groups_repeated;
+
+% Calculating average, standard deviation and standard error
+for idx = range_groups
+    % group - Gene expression table for the patients in group #idx
     group = numericDataTransposed(idx == groupsIdx, :); 
     gene_average_per_group = mean(group, 1);
-    averages_per_gene = [averages_per_gene, gene_average_per_group'];
-    average_all_genes_per_group = mean(gene_average_per_group);
-    std_genes_per_group = std(gene_average_per_group);
-    header_for_group = sprintf("group %d", idx);
-    tmp = [header_for_group; gene_average_per_group'];
-    tbl1 = [tbl1, tmp];
-    tbl2 = [tbl2, [average_all_genes_per_group; std_genes_per_group]];
+    gene_std_per_group = std(group, 1);
+    gene_stde_per_group = gene_std_per_group/sqrt(numPatients);
+    
+    averages_per_group = [averages_per_group, gene_average_per_group'];
+    std_per_group = [std_per_group, gene_std_per_group'];
+    stde_per_group = [stde_per_group, gene_stde_per_group'];
 end
-table = [tbl1;tbl2];
+
+% Calculating anova 
+pvalues_anova = anovaPerGene(numericDataTransposed, groupsIdx);
+headers = [headers, "Pvalue ANOVA"];
+tbl = [tbl1, [headers; averages_per_group, ...
+    std_per_group, stde_per_group, pvalues_anova]];
+
+% Calculating t-test
 if numGroups == 2
-    [~, pvalue] = ttest(averages_per_gene(:,1), averages_per_gene(:,2));
-    empty_spaces = strings(size(table, 1) - 2, 1);
-    tmp = ["P-value of t test"; pvalue; empty_spaces];
-    table = [table, tmp];
+    pvalues_ttest = ttestPerGene(numericDataTransposed, groupsIdx);
+    tmp = ["P-value of t test"; pvalues_ttest];
+    tbl = [tbl, tmp];
 end
-xlswrite(outputFile, table);
+
+%empty_spaces = strings(size(table, 1) - 2, 1);
+writematrix(tbl, outputFile, 'Sheet', 1);
+end
+
+% Calculating one way anova for each gene while the groups are based on the
+% patients
+function pvalues = anovaPerGene(data, groupsIdx)
+numGenes = size(data, 2);
+pvalues = ones(numGenes, 1);
+for i = 1:numGenes
+   pvalues(i) = anova1(data(:, i), groupsIdx, 'off');
+end
+end
+
+% Calculating t-test for each gene while the groups are based on the
+% patients
+function pvalues = ttestPerGene(data, groupsIdx)
+numGenes = size(data, 2);
+pvalues = ones(numGenes, 1);
+group1 = data(groupsIdx == 1, :);
+group2 = data(groupsIdx == 2, :);
+for i = 1:numGenes
+    [~,pvalues(i)] = ttest2(group1(:,i), group2(:,i));
+end
+end
+
+
+function patientsGroups(patientsNames, groupsIdx, outputFile)
+groups = unique(groupsIdx);
+numGroups = length(groups);
+headers = ["Patients", "Groups"];
+patients = [];
+groups = [];
+for i = 1:numGroups 
+    patients_in_group = patientsNames(groupsIdx == i);
+    patients = [patients; patientsNames(groupsIdx == i)'];
+    group_num_repeated = repmat(i, length(patients_in_group), 1);
+    groups = [groups; group_num_repeated];
+end
+tbl = [headers; [patients, num2cell(groups)]];
+writematrix(tbl, outputFile, 'Sheet', 2);
 end
