@@ -4,7 +4,7 @@ function kaplan_meier_by_clustering(outputDir, numericData, geneNames, patientsN
 for numGroups = 2:6
     clusteringPlotTitle = sprintf('Clustering by k-means, numGroups = %d', numGroups);
     kmPlotTitle = sprintf('Kaplan of patients clustered by K-mean, numGroups = %d', numGroups); 
-    clustering_method = 'kmeans_only';
+    clustering_method = 'kmeans only';
     fileName = sprintf('gene_averages_per_group_%d_groups_clustered_by_kmeans.xlsx', numGroups); 
     fileOutput = fullfile(outputDir,fileName); 
     kaplan_meier_by_clustering_method(numericData, patientsNames, ....
@@ -13,7 +13,7 @@ for numGroups = 2:6
 
     clusteringPlotTitle = sprintf('Clustering by k-means after pca, numGroups = %d', numGroups);
     kmPlotTitle = sprintf('Kaplan of patients clustered by K-mean after pca, numGroups = %d', numGroups); 
-    clustering_method = 'kmeans_after_pca';
+    clustering_method = 'kmeans after pca';
     fileName = sprintf('gene_averages_per_group_%d_groups_clustered_by_kmeans_after_pca.xlsx', numGroups);
     fileOutput = fullfile(outputDir,fileName); 
     kaplan_meier_by_clustering_method(numericData, patientsNames, ....
@@ -84,7 +84,8 @@ end
 
 function stats = kaplan_meier(TimeVar, EventVar, GroupVar, timeCutOff, titlePlot)
 [~, fh, stats] = MatSurv(TimeVar, EventVar, GroupVar, 'XLim', timeCutOff,...
-    'Title', titlePlot, 'NoRiskTable', true, 'PairwiseP', true, 'TitleOptions', {'FontSize', 11});
+    'Title', titlePlot, 'NoRiskTable', true, 'PairwiseP', true, 'NoPlot', true, ...
+    'TitleOptions', {'FontSize', 11});
 fh.Name = titlePlot;
 end 
 
@@ -93,9 +94,9 @@ function kaplan_meier_by_clustering_method(numericData, patientsNames, ....
     patientsNamesKM, timeData, cens, timeCutOff, clusteringPlotTitle, ...
     kmPlotTitle, numGroups, clustering_method, geneNames, outputFile)
 switch clustering_method
-    case 'kmeans_only'
+    case 'kmeans only'
         groupsIdx = getGroupsByKmeans(numericData, numGroups, clusteringPlotTitle);
-    case 'kmeans_after_pca'
+    case 'kmeans after pca'
         groupsIdx = getGroupsByKmeansAfterPca(numericData, numGroups, clusteringPlotTitle);
     otherwise
         disp('No clustering method was procided')
@@ -109,14 +110,18 @@ figure('Name', silhouetteTitle, 'visible', 'off');
 silhouette(numericData', groupsIdx);
 title(silhouetteTitle);
 if(numGroups == 2)
-    descriptiveStatisticsForGroups(geneNames, numericData, groupsIdx, outputFile);
+    [averages_per_group, ~, stde_per_group] =...
+        descriptiveStatisticsForGroups(geneNames, numericData, groupsIdx, outputFile);
     patientsGroups(patientsNames, groupsIdx, outputFile);
+    meanGeneExpressionBarPlot(geneNames, averages_per_group, ....
+    stde_per_group, numGroups, clustering_method)
 end
 end 
 
 % Calculating average, standard deviation, standard error, t-test (for 2
 % groups), and anova for each gene in groups.
-function descriptiveStatisticsForGroups(geneNames, numericData, groupsIdx, outputFile)
+function [averages_per_group, std_per_group, stde_per_group, pvalues_anova]...
+    = descriptiveStatisticsForGroups(geneNames, numericData, groupsIdx, outputFile)
 groups = unique(groupsIdx);
 numGroups = length(groups);
 numPatients = size(numericData, 2);
@@ -204,4 +209,28 @@ for i = 1:numGroups
 end
 tbl = [headers; [patients, num2cell(groups)]];
 writematrix(tbl, outputFile, 'Sheet', 2);
+end
+
+
+function meanGeneExpressionBarPlot(geneNames, meanExpClustered, ....
+    errorClustered, numGroups, clusteringMethod)
+numBars = length(geneNames);
+figName = sprintf("Average gene expression per cluster - %d clusters %s",...
+    numGroups, clusteringMethod);
+figure('Name', figName, 'Visible', 'off');
+hBar = bar(1:numBars, meanExpClustered, 'grouped');
+hold on
+for i = 1:numGroups
+    barCoor = bsxfun(@plus, hBar(i).XData, [hBar(i).XOffset]');
+    errorbar(barCoor, meanExpClustered(:,i), errorClustered(:,i), '.');
+end
+hold off
+clear title xlabel ylabel; 
+xticks(1:numBars);
+xticklabels(geneNames);
+str = sprintf("Average Gene Expression Per Cluster\nClustering method: %s\nNumber of groups: %d",...
+    clusteringMethod, numGroups);
+title(str);
+xlabel('Gene Names');
+ylabel('Average Expression of Genes');
 end

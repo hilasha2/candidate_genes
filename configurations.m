@@ -104,7 +104,8 @@ do_mutation_and_clinical_analysis = 1;
 %% Breast Cancer Ophir
 
 
-filename = '\\metlab26\d\Users\Hila Shacham\breast cancer sources\Ophir_gene_expression_table_v2.xlsx';
+%filename = '\\metlab26\d\Users\Hila Shacham\breast cancer sources\Ophir_gene_expression_table_v2.xlsx';
+filename = '\\metlab26\d\Users\Hila Shacham\breast cancer sources\Ophir_gene_expression_MAF_MIF_15_3_2020.xlsx';
 filename_km = '\\metlab26\d\Users\Hila Shacham\breast cancer sources\brca_metabric\data_clinical_patient.xlsx';
 sheet_name = 1;
 do_genes_expression_calculations = 0;
@@ -118,7 +119,7 @@ colPatientsNamesKM = 1;
 livingStatusStr = "Living";
 deceasedButNotCancerStr = "Died of Other Causes"; 
 timeCutOff = 120;
-outputDir = '\\metlab24\d\InPut\Hila\Candidate Genes\Ophir output\results May 27 2019\STAT3';
+outputDir = '\\metlab24\d\InPut\Hila\Candidate Genes\Ophir output\results March 15 2020\MYC\MAF MIF';
 extraClinicalDataCellMatrix = [];
 do_mutation_analysis = 0;
 colMutationsTypes = 10;
@@ -127,7 +128,7 @@ colGeneNamesMut = 1;
 filename_mut = '\\132.66.95.239\D\InPut\Hila\breast cancer sources\brca_metabric\data_mutations_extended.xlsx';
 ppt_template = '132.66.95.239\D\InPut\Hila\Candidate Genes\BRC_Candidate_Genes.pptx';
 gene_nomenclature = "both";
-gene_name = "STAT3";
+gene_name = "MYC";
 use_cbioportal_not_lab_std = 1;
 rowMutationsData = 3;
 %getGeneImages = {'Kaplan' 'ADAMTS15' 'ADAMTS9' 'ADAMTSL2' 'ALDH1A2' 'ALPK3' 'AMIGO3' 'ANKRD39' 'ANKRD9' 'ARHGAP18' 'ARHGAP23' 'ARNTL' 'AVIL' 'BASP1' 'BCL2L1' 'BDKRB1' 'BLOC1S2' 'C1orf116' 'CACYBP' 'CCDC86' 'CD248' 'CD55'};
