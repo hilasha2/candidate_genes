@@ -84,9 +84,10 @@ end
 
 function stats = kaplan_meier(TimeVar, EventVar, GroupVar, timeCutOff, titlePlot)
 [~, fh, stats] = MatSurv(TimeVar, EventVar, GroupVar, 'XLim', timeCutOff,...
-    'Title', titlePlot, 'NoRiskTable', true, 'PairwiseP', true, 'NoPlot', true, ...
+    'Title', titlePlot, 'NoRiskTable', false, 'PairwiseP', true, ...
     'TitleOptions', {'FontSize', 11});
 fh.Name = titlePlot;
+fh.Visible = 'off';
 end 
 
 
@@ -115,9 +116,14 @@ if(numGroups == 2)
     patientsGroups(patientsNames, groupsIdx, outputFile);
     meanGeneExpressionBarPlot(geneNames, averages_per_group, ....
     stde_per_group, numGroups, clustering_method)
+    divideGenesAndAvereageGeneExpressionIntoGroups ...
+        (geneNames, averages_per_group, numGroups, clustering_method, ...
+        outputFile)
 end
 end 
+%% ---- Helper functions to kaplan_meier_by_clustering_method 
 
+% ---
 % Calculating average, standard deviation, standard error, t-test (for 2
 % groups), and anova for each gene in groups.
 function [averages_per_group, std_per_group, stde_per_group, pvalues_anova]...
@@ -172,6 +178,7 @@ end
 writematrix(tbl, outputFile, 'Sheet', 1);
 end
 
+% ---
 % Calculating one way anova for each gene while the groups are based on the
 % patients
 function pvalues = anovaPerGene(data, groupsIdx)
@@ -182,6 +189,7 @@ for i = 1:numGenes
 end
 end
 
+% ---
 % Calculating t-test for each gene while the groups are based on the
 % patients
 function pvalues = ttestPerGene(data, groupsIdx)
@@ -194,7 +202,8 @@ for i = 1:numGenes
 end
 end
 
-
+% ---
+% Writing to an excel sheet the patients and their division into groups.
 function patientsGroups(patientsNames, groupsIdx, outputFile)
 groups = unique(groupsIdx);
 numGroups = length(groups);
@@ -211,7 +220,9 @@ tbl = [headers; [patients, num2cell(groups)]];
 writematrix(tbl, outputFile, 'Sheet', 2);
 end
 
-
+% ---
+% Plotting a bar plot of average gene expression per gene. Number of bar
+% per gene is the number of groups clustered. Includes standard errors. 
 function meanGeneExpressionBarPlot(geneNames, meanExpClustered, ....
     errorClustered, numGroups, clusteringMethod)
 numBars = length(geneNames);
@@ -233,4 +244,82 @@ str = sprintf("Average Gene Expression Per Cluster\nClustering method: %s\nNumbe
 title(str);
 xlabel('Gene Names');
 ylabel('Average Expression of Genes');
+end
+
+% ---
+function divideGenesAndAvereageGeneExpressionIntoGroups ...
+    (geneNames, meanExpClustered, numGroups, clusteringMethod, ...
+    outputFile)
+if numGroups ~= 2
+    disp('Number of patients clusters must be 2!');
+    return
+end
+% Dividing genes according to their expression: above/bellow average in group 1 and
+% above/bellow average in group 2. Average is 0.
+idx_pos_pos = meanExpClustered(:,1) > 0 & meanExpClustered(:,2) > 0;
+idx_pos_neg = meanExpClustered(:,1) > 0 & meanExpClustered(:,2) < 0;
+idx_neg_pos = meanExpClustered(:,1) < 0 & meanExpClustered(:,2) > 0;
+idx_neg_neg = meanExpClustered(:,1) < 0 & meanExpClustered(:,2) < 0;
+
+scatterPlotPosNeg(idx_pos_pos, geneNames, meanExpClustered,...
+    "above", "above", clusteringMethod);
+scatterPlotPosNeg(idx_pos_neg, geneNames, meanExpClustered,...
+    "above", "bellow", clusteringMethod);
+scatterPlotPosNeg(idx_neg_pos, geneNames, meanExpClustered,...
+    "bellow", "above", clusteringMethod);
+scatterPlotPosNeg(idx_neg_neg, geneNames, meanExpClustered,...
+    "bellow", "bellow", clusteringMethod);
+
+
+tbl1 = createTablePosNeg(idx_pos_pos, geneNames, meanExpClustered, ...
+    "above", "above");
+tbl2 = createTablePosNeg(idx_pos_neg, geneNames, meanExpClustered, ...
+    "above", "bellow");
+tbl3 = createTablePosNeg(idx_neg_pos, geneNames, meanExpClustered, ...
+    "bellow", "above");
+tbl4 = createTablePosNeg(idx_neg_neg, geneNames, meanExpClustered, ...
+    "bellow", "bellow");
+tbl12 = outerjoin(tbl1, tbl2);
+tbl34 = outerjoin(tbl3, tbl4);
+tbl = outerjoin(tbl12, tbl34);
+writetable(tbl, outputFile, 'Sheet', 3);
+end
+
+% ---
+% Scatter plot of average gene expression - patients divided by 2 clusters, 
+% and by a specific 'group'. 'group' is based on the value of expression
+% above/bellow average expression. Average expression is 0.
+function scatterPlotPosNeg(idx, geneNames, meanExpClustered,...
+    group1avg, group2avg, clusteringMethod)
+figName = sprintf('Scatter plot of average gene expression per cluster %s grp1 %s grp 2 %s', ...
+    clusteringMethod, group1avg, group2avg);
+figure('Name', figName, 'Visible', 'off'); 
+geneNamesInGroups = geneNames(idx);
+meanExpClusteredInGroup = meanExpClustered(idx, :);
+cat_geneNamesInGroups = categorical(geneNamesInGroups);
+sh1 = scatter(cat_geneNamesInGroups, meanExpClusteredInGroup(:, 1), 4);  
+hold on
+sh2 = scatter(cat_geneNamesInGroups, meanExpClusteredInGroup(:, 2), 4); 
+hold off
+clear title xlabel ylabel; 
+titleStr = sprintf("Average Gene Expression Per Cluster\nClustering method: %s",...
+    clusteringMethod);
+annotationStr = sprintf("Genes in group 1: have %s avg exp\nGenes in group 2: have %s avg exp",...
+                group1avg, group2avg);
+title(titleStr);
+annotation('textbox', [.2 .5 .3 .3], 'String', annotationStr,...
+    'FitBoxToText', 'on');
+legend([sh1 sh2], 'group 1', 'group 2'); 
+xlabel('Gene Names');
+ylabel('Average Expression of Genes');
+end
+
+% ----
+function tbl = createTablePosNeg(idx, geneNames, meanExpClustered, ...
+    grp1avg, grp2avg)
+grp1Title = sprintf('group 1 (%s average)', grp1avg);
+grp2Title = sprintf('group 2 (%s average)', grp2avg);
+variableNames = {'Genes', grp1Title, grp2Title}; 
+tbl = table(geneNames(idx), meanExpClustered(idx, 1), meanExpClustered(idx, 2), ...
+    'VariableNames', variableNames);
 end

@@ -114,7 +114,7 @@ end
 % end
 
 
-function table = getBarPlot(topData, lowData, geneNames, titlePlot, inputFile, ...
+function tbl = getBarPlot(topData, lowData, geneNames, titlePlot, inputFile, ...
     topPerc, geneIdx, gene_name, outputFile)
 topMean = mean(topData, 2);
 lowMean = mean(lowData, 2);
@@ -142,18 +142,22 @@ xlabel('Gene Names');
 ylabel('Expression of Genes');
 title(titlePlot);
 geneName = sprintf('%s', gene_name);
-table = {inputFile, '', '', '', '', '';'data split according to', geneName, '', '', '', ''};
+% Constructing a table for excel summarising the results
+% First 2 rows:
+tbl = {inputFile, '', '', '', '', '';'data split according to', geneName, '', '', '', ''};
+% 3rd & 4th rows
 numHighPatientsStr = sprintf('no. of high-%s patients', gene_name);
 numLowPatientsStr = sprintf('no. of low-%s patients', gene_name);
-table = [table; {'top percentage', numHighPatientsStr, 'low percentage', numLowPatientsStr, '', ''}];
-table = [table; {topPerc, size(topData, 2), 100-topPerc, size(lowData, 2), '', ''}];
-table = [table; {'Gene Names', 'mean high expression', 'mean low expression', 'Ratio high/low', 'P-value', 'Significant'}];
+tbl = [tbl; {'top percentage', numHighPatientsStr, 'low percentage', numLowPatientsStr, '', ''}];
+tbl = [tbl; {topPerc, size(topData, 2), 100-topPerc, size(lowData, 2), '', ''}];
+% 5th row
+tbl = [tbl; {'Gene Names', 'mean high expression', 'mean low expression', 'Ratio high/low', 'P-value', 'Significant'}];
 % bool = (pvalues < 0.05 & pvalues <= pvalues(geneIdx));
 bool = (pvalues < 0.05);
 tmp = [geneNames, num2cell(topMean), num2cell(lowMean), num2cell(topMean./lowMean), num2cell(pvalues'), num2cell(bool')];
 tmp = sortrows(tmp, 5); % sort by p-values
-table = [table; tmp];
-xlswrite(outputFile, table);
+tbl = [tbl; tmp];
+xlswrite(outputFile, tbl);
 end
 
 
