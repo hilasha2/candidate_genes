@@ -105,7 +105,7 @@ do_mutation_and_clinical_analysis = 1;
 
 
 %filename = '\\metlab26\d\Users\Hila Shacham\breast cancer sources\Ophir_gene_expression_table_v2.xlsx';
-filename = 'D:\InPut\Hila\Candidate genes\breast cancer sources\Ophir_gene_expression_MAF_MIF_15_3_2020.xlsx';
+filename = 'D:\InPut\Hila\Candidate genes\breast cancer sources\Ophir_gene_expression_MIF_NLF_15_3_2020.xlsx';
 %filename = 'D:\InPut\Hila\Candidate genes\breast cancer sources\Ophir_gene_expression_table_v2.xlsx';
 %filename_km = '\\metlab26\d\Users\Hila Shacham\breast cancer sources\brca_metabric\data_clinical_patient.xlsx';
 filename_km = 'D:\InPut\Hila\Candidate genes\breast cancer sources\bioportal\data_clinical_patient.xlsx';
@@ -121,7 +121,7 @@ colPatientsNamesKM = 1;
 livingStatusStr = "Living";
 deceasedButNotCancerStr = "Died of Other Causes"; 
 timeCutOff = 120;
-outputDir = 'D:\InPut\Hila\Candidate genes\Ophir output\results March 15 2020\MYC\MAF MIF';
+outputDir = 'D:\InPut\Hila\Candidate genes\Ophir output\results March 15 2020\MYC\MIF NLF';
 extraClinicalDataCellMatrix = [];
 do_mutation_analysis = 0;
 colMutationsTypes = 10;

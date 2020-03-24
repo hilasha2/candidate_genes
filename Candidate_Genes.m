@@ -57,7 +57,7 @@
 % means the first column is 'Hugo_symbol' and the second is
 % 'Entrez_gene_id'.
 % * gene_name - Indicates which gene the analysis should focus on. Default
-% is 'MET'. 
+% is 'MET'. Either 'string' or 'char'. 
 % * use_cbioportal_not_lab_std - Whether to use the standard of data
 % sources as in cbiportal or the standard that will be decided in the lab.
 % 1 is cbioportal, 0 is lab standard.
@@ -90,20 +90,22 @@ mkdir(outputDir);
     % patientsNames - A character cell array of the patients IDs.
     % geneNames - A character cell array with all the genes.
 
-    [numericData, txtData] = xlsread(filename, sheet_name);
-    
+    fileTable = readtable(filename, 'FileType', 'spreadsheet', 'ReadVariableNames', ...
+        true, 'ReadRowNames', true, 'PreserveVariableNames', true, 'Sheet', ...
+        sheet_name, 'UseExcel', true);
+    geneNames = fileTable.Properties.RowNames;
+
+
     if strcmp(gene_nomenclature, 'entrez') 
-        numericData = numericData(:, 2:end); 
-        patientsNames = txtData(1, 2:end);
-        geneNames = numericData(:, 1); 
+        numericData = fileTable(:,2:end).Variables; 
+        patientsNames = fileTable.Properties.VariableNames;
+        geneNames = num2cell(geneNames);
     elseif strcmp(gene_nomenclature, 'hugo')
-        % if nomenclature == 'hugo' numericData stays the same.
-        patientsNames = txtData(1, 2:end);
-        geneNames = txtData(2:end, 1); 
+        numericData = fileTable.Variables;
+        patientsNames = fileTable.Properties.VariableNames;
     elseif strcmp(gene_nomenclature, 'both')
-        numericData = numericData(:, 2:end);
-        patientsNames = txtData(1, 3:end);
-        geneNames = txtData(2:end, 1); 
+        numericData = fileTable(:,2:end).Variables;
+        patientsNames = fileTable.Properties.VariableNames(2:end);
     end
 
 
@@ -213,50 +215,28 @@ end
 
 close all hidden;
 
+[structNumericDataH, structNumericDataL, ...
+    structPatientsH, structPatientsL] = getSplitData(numericData, patientsNames, geneIdx);
+
+
 %% -------- Genes expressions calculations
-% -------- splitting it into different expression percetages of MET expressions.
-
-% Splitting the table into the top 30% MET values and 70% low MET values.
-[top30Data, low70Data, patientsNamesTop30, patientsNamesLow70]...
-    = split_gene_data_by_percentage(numericData, patientsNames, 0.3, 0.7, geneIdx);
-
-% Splitting the table into the top 20% MET values and 80% low MET values.
-[top20Data, low80Data, patientsNamesTop20, patientsNamesLow80]...
-    = split_gene_data_by_percentage(numericData, patientsNames, 0.2, 0.8, geneIdx);
-
-% Splitting the table into the top 10% MET values and 90% low MET values.
-[top10Data, low90Data, patientsNamesTop10, patientsNamesLow90]...
-    = split_gene_data_by_percentage(numericData, patientsNames, 0.1, 0.9, geneIdx);
-
-% Splitting the table into the top 80% MET values and 20% low MET values.
-[top80Data, low20Data, patientsNamesTop80, patientsNamesLow20]...
-    = split_gene_data_by_percentage(numericData, patientsNames, 0.8, 0.2, geneIdx);
-
-% Splitting the table into the top 70% MET values and 30% low MET values.
-[top70Data, low30Data, patientsNamesTop70, patientsNamesLow30]...
-    = split_gene_data_by_percentage(numericData, patientsNames, 0.7, 0.3, geneIdx);
-
 if do_genes_expression_calculations
     expression_data_analysis(filename, outputDir, numericData, geneNames, patientsNames, ...
-    geneIdx,gene_name, top30Data, low70Data, patientsNamesTop30, top20Data, ...
-    low80Data, patientsNamesTop20, top10Data, low90Data, patientsNamesTop10, ...
-    top80Data, low20Data, patientsNamesTop80, top70Data, low30Data, patientsNamesTop70);
+    geneIdx, gene_name, structNumericDataH, structNumericDataL, structPatientsH);
 end
 
 %% --------- Clinical calculations
 if do_km_analysis
     kaplan_meier_data_analysis(filename_km, outputDir, numericData, geneNames, patientsNames, ....
-    patientsNamesKM, timeData, cens, timeCutOff, patientsNamesTop30, patientsNamesLow70,...
-    patientsNamesTop20, patientsNamesLow80, patientsNamesTop10, patientsNamesLow90,...
-    patientsNamesTop80, patientsNamesLow20, patientsNamesTop70, patientsNamesLow30,...
+    patientsNamesKM, timeData, cens, timeCutOff, structPatientsH, structPatientsL, ...
     gene_name);
 end 
 
 %% --------- Subtype calculations
-    if do_subtype_histograms
-        cancer_subtypes_analysis(filename_km, outputDir, numericData, patientsNames, geneNames,...
-        txtDataKM, patientsNamesKM, geneIdx, colCancerSubtypes, use_cbioportal_not_lab_std, gene_name);
-    end
+if do_subtype_histograms
+     cancer_subtypes_analysis(filename_km, outputDir, numericData, patientsNames, geneNames,...
+     txtDataKM, patientsNamesKM, geneIdx, colCancerSubtypes, use_cbioportal_not_lab_std, gene_name);
+end
 
 %% --------- Mutation calculations
 if do_mutation_analysis
@@ -276,7 +256,7 @@ if do_km_by_clustering
     patientsNamesKM, timeData, cens, timeCutOff)
 end
 
-%% Saving all opened figures as images
+%% ---------- Saving all opened figures as images
 
 FolderName = strcat(outputDir,'\graphs');   % Destination folder for plots
 mkdir(FolderName); 
@@ -309,6 +289,8 @@ end
 disp('Done!');
 end
 
+% ---------- Helper functions
+
 % Saving a figure by its handle, FigHandle,  and name, FigName. Image is
 % saved in the folder FolderName.
 function save_figure(FigHandle, FigName, FolderName)
@@ -326,7 +308,7 @@ end
 
 % Checking whether PATIENT_ID's length in patientsNames and
 % patientsNamesKM is equal.
-% predicate - patienntsNames look like 'TCGA-3B-A9HI-01', while
+% predicate - patientsNames look like 'TCGA-3B-A9HI-01', while
 % patientsNamesKM looks like 'TCGA-3B-A9HI'  
 function patientsNames = patientsNamesFromDiffDatasets(patientsNames, patientsNamesOtherDataset, use_cbioportal_not_lab_std)
 if (use_cbioportal_not_lab_std)

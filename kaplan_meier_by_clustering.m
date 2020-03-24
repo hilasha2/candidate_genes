@@ -24,26 +24,28 @@ end
 
 %% Supporting functions
 
+% ---
 % We cluster the patients by k-means
 function groupsIdx = getGroupsByKmeans(numericData, numGroups, plotTitle)
 groupsIdx = kmeans(numericData', numGroups); 
 plotScatteredGroups(numericData', groupsIdx, plotTitle)
 end
 
-
+% ---
 % Clustering patients where numericData is spanned by pca space. 
 function groupsIdx = getGroupsByKmeansAfterPca(numericData, numGroups, plotTitle)
-% pca(groupsData) - rows, n - observations, columns, p - variables. 
-% groupsData - n*p
-% dataInPcaSpace - n*p, pcaEigenvalues - p*p
-[~,dataInPcaSpace] = pca(numericData'); % zscore(data) is zscore(groupsData*coeff);  
+% pca(groupsData) - rows, n - observations (patients), columns, p - variables (genes). 
+% groupsData = numericData' - n*p
+% dataInPcaSpace - n*p, pcaEigenvalues (coeff) - p*p
+[~,dataInPcaSpace] = pca(numericData'); % zscore(dataInPcaSpace) is zscore(groupsData*coeff);  
 groupsIdx = getGroupsByKmeans(dataInPcaSpace', numGroups, plotTitle);
 end
 
-
+% ---
 % Plotting the patients by their groups in a scatter plot. 
-% Since the patients have p dimensions (number of genes), we choose 
-% to plot the patients by a different space spanned by pca components.
+% The patients have p dimensions (number of genes).
+% We choose to plot the patients by a different space spanned by pca components.
+% We plot the data by the first 2 pca components (eigen-values). 
 function plotScatteredGroups(groupsData, groupsIdx, plotTitle)
 [~, dataInPcaSpace, pcaEigenvalues] = pca(groupsData);  
 percEigenvalues = pcaEigenvalues./sum(pcaEigenvalues) * 100;
@@ -54,12 +56,13 @@ ylabel(['Second Principal Component ' num2str(percEigenvalues(2)) '%']);
 title(plotTitle);
 end 
 
+% ---
 % Getting all required inputs for kaplan meier analysis. 
 % The groups for the kaplan meier are the patients separated by our desired
 % clustering method.
 function [timeVar, censVar, groupVar] = ...
     get_time_cens_groups(patientsNames, patientsNamesKM, groupsIdx, timeData, cens)
-groups = unique(groupsIdx);
+groups = unique(groupsIdx); % unique orders the result.
 numGroups = length(groups);
 timeVar = [];
 censVar = [];
@@ -81,7 +84,8 @@ categoricalGroups = categorical(groupVar);
 groupVar = cellstr(categoricalGroups);
 end
 
-
+% ---
+% Kaplan Meier function 
 function stats = kaplan_meier(TimeVar, EventVar, GroupVar, timeCutOff, titlePlot)
 [~, fh, stats] = MatSurv(TimeVar, EventVar, GroupVar, 'XLim', timeCutOff,...
     'Title', titlePlot, 'NoRiskTable', false, 'PairwiseP', true, ...
@@ -90,7 +94,8 @@ fh.Name = titlePlot;
 fh.Visible = 'off';
 end 
 
-
+% ---
+% Main function
 function kaplan_meier_by_clustering_method(numericData, patientsNames, ....
     patientsNamesKM, timeData, cens, timeCutOff, clusteringPlotTitle, ...
     kmPlotTitle, numGroups, clustering_method, geneNames, outputFile)
@@ -118,10 +123,11 @@ if(numGroups == 2)
     stde_per_group, numGroups, clustering_method)
     divideGenesAndAvereageGeneExpressionIntoGroups ...
         (geneNames, averages_per_group, numGroups, clustering_method, ...
-        outputFile)
+        outputFile);
+    pearsonCorr(groupsIdx, numericData, geneNames, numGroups, clustering_method)
 end
 end 
-%% ---- Helper functions to kaplan_meier_by_clustering_method 
+%% ---- Functions for analysing the data after the clustering.
 
 % ---
 % Calculating average, standard deviation, standard error, t-test (for 2
@@ -314,7 +320,7 @@ xlabel('Gene Names');
 ylabel('Average Expression of Genes');
 end
 
-% ----
+% ---
 function tbl = createTablePosNeg(idx, geneNames, meanExpClustered, ...
     grp1avg, grp2avg)
 grp1Title = sprintf('group 1 (%s average)', grp1avg);
@@ -322,4 +328,33 @@ grp2Title = sprintf('group 2 (%s average)', grp2avg);
 variableNames = {'Genes', grp1Title, grp2Title}; 
 tbl = table(geneNames(idx), meanExpClustered(idx, 1), meanExpClustered(idx, 2), ...
     'VariableNames', variableNames);
+end
+
+% ---
+% Pearson correlation between the genes in each group
+function pearsonCorr(idx, numericData, geneNames, numGroups, clusteringMethod)
+transposedNumericData = numericData'; % transposedNum.. row - patients, cols - genes.
+for i = 1:numGroups
+    [correlation_mat, pvals] = corrcoef(transposedNumericData(idx == i, :));
+    coef_str = "Pearson Correlation Coefficients";
+    pval_str = "Pearson Correlation Pvalues";
+    pearsonFig(coef_str, correlation_mat, geneNames, clusteringMethod, numGroups, i);
+    pearsonFig(pval_str, pvals, geneNames, clusteringMethod, numGroups, i);
+end
+end
+
+% ---
+% Creating figures for pearson correlation
+function pearsonFig(plotString, data, geneNames, clusteringMethod, numGroups, groupID)
+numGenes = length(geneNames);
+figNameCorr = sprintf("%s - %d clusters %s group number %d",...
+        plotString, numGroups, clusteringMethod, groupID);
+figure('Name', figNameCorr, 'Visible', 'off');
+imagesc(data);
+colorbar;
+set(gca,'XTick', 1:numGenes,'XTickLabel', geneNames, 'XTickLabelRotation', 90, ...
+    'YTick', 1:numGenes, 'YTickLabel', geneNames);
+titlePlot = sprintf("%s\nnumber of clusters: %d, group: %d \nclustering method: %s", ...
+   plotString, numGroups, groupID, clusteringMethod); 
+title(titlePlot);
 end
