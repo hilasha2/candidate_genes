@@ -42,7 +42,7 @@ elseif strcmp('exp_exp', type_of_splitting)
     'Initial no. of patients HH', 'Initial no. of patients HL',...
     'Initial no. of patients LH', 'Initial no. of patients LL',...
     'p-value of co-expression', tmpStr, 'p-value of expression', ...
-    'Significant (p-value exprssion)'};
+    'Significant (p-value expression)'};
 end
 
 
@@ -55,7 +55,7 @@ KM_support_functions.kaplan_meier_gene1_vs_gene2(fileOutput, geneName1, ...
 KM_support_functions.kaplan_meier_gene1_vs_gene2(fileOutput, geneName1,...
     numericData, patientsNames, patientsNamesKM, patientsNamesGene1GA, ...
     patientsNamesGene1GB, geneNames, timeData, cens, timeCutOff, ...
-    1 - percTop, 1 - percLow, 1 - percTop, 1 - percLow, table, ...
+    percTop, percLow, 1 - percTop, 1 - percLow, table, ...
     type_of_splitting, extra_data_splitting);
 
 end
@@ -75,8 +75,8 @@ end
 if strcmp('mut_exp', type_of_splitting)
     % P-value of gene2 is compared to gene1's p-value. 
     % Since there's no relevance for KM in 'mut_exp' for gene1
-    % it is denoted by -1 an impossible value for p-value
-	pvalueGene1 = -1; 
+    % it is denoted by 2 an impossible value for p-value
+	pvalueGene1 = 2; 
 elseif strcmp('exp_exp', type_of_splitting)
 	pvalueGene1 = extra_data_splitting{1}; 
 end
@@ -111,7 +111,7 @@ for geneIdx = 1:length(geneNames)
                 patientsNamesKM, timeData, cens, patientsNamesTopGene2,...
                 patientsNamesLowGene2, titlePlot2, statsGene2Only, geneName2);
             extra_data = {statsGene2Only.p}; 
-        elseif strcmp('exp_mut', type_of_splitting)
+        elseif strcmp('mut_exp', type_of_splitting)
             extra_data = {};
         end
         

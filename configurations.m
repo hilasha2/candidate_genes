@@ -515,34 +515,39 @@ Candidate_Genes(filename, filename_km, sheet_name,ppt_template, ...
 %% Hala 
 % BC 
 
-filename = '\\metlab26\D\Users\Hila Shacham\breast cancer sources\Hala bc expression genes summary v3.xlsx';
-filename_km = '\\metlab26\D\Users\Hila Shacham\breast cancer sources\brca_metabric\data_clinical_patient.xlsx';
+%filename = '\\metlab26\D\Users\Hila Shacham\breast cancer sources\Hala bc expression genes summary v3.xlsx';
+filename = 'D:\InPut\Hila\Candidate genes\breast cancer sources\Hala bc expression genes summary v3.xlsx';
+%filename_km = '\\metlab26\D\Users\Hila Shacham\breast cancer sources\brca_metabric\data_clinical_patient.xlsx';
+filename_km = 'D:\InPut\Hila\Candidate genes\breast cancer sources\bioportal\data_clinical_patient.xlsx';
 sheet_name = 1;
-do_genes_expression_calculations = 1;
-do_clinical_calculations = 1;
-do_subtype_histograms = 10;
+do_genes_expression_calculations = 0;
+do_km_analysis = 1;
+do_subtype_histograms = 0;
 use_days_not_months = 0;
-colTimeData = 2;
-colSurvivalStatus = 4;
-colCancerSubtypes = 16;
+colTimeData = 13;
+colSurvivalStatus = 17;
+colCancerSubtypes = 15;
 colPatientsNamesKM = 1;
 livingStatusStr = "Living";
 deceasedButNotCancerStr = "Died of Other Causes"; 
 timeCutOff = 120;
-outputDir = '\\metlab26\D\Users\Hila Shacham\Candidate Genes\Hala\bc';
+% outputDir = '\\metlab26\D\Users\Hila Shacham\Candidate Genes\Hala\bc';
+outputDir = '\\metlab24\d\input\hila\candidate genes\hala\21_5_2020\bc';
 extraClinicalDataCellMatrix = [];
-do_mutation_analysis = 1;
+do_mutation_analysis = 0;
 colMutationsTypes = 9;
 colPatientsNamesMutation = 17;
 colGeneNamesMut = 1;
-filename_mut = '\\metlab26\D\Users\Hila Shacham\breast cancer sources\brca_metabric\data_mutations_extended.xlsx';
-ppt_template = '\\metlab26\D\Users\Hila Shacham\Candidate Genes\BRC_Candidate_Genes.pptx';
+%filename_mut = '\\metlab26\D\Users\Hila Shacham\breast cancer sources\brca_metabric\data_mutations_extended.xlsx';
+filename_mut = 'D:\InPut\Hila\Candidate genes\breast cancer sources\bioportal\data_mutations_extended.xlsx';
+%ppt_template = '\\metlab26\D\Users\Hila Shacham\Candidate Genes\BRC_Candidate_Genes.pptx';
 gene_nomenclature = "both";
 gene_name = "BRCA1";
 use_cbioportal_not_lab_std = 1;
 rowMutationsData = 3;
-getGeneImages = {'none'};
-do_mutation_and_clinical_analysis = 1;
+getGeneImages = {'SMAD3'};
+do_km_by_mutation_and_expression = 0;
+do_km_by_clustering = 0;
 
 %% Ovary 
 
@@ -607,21 +612,24 @@ rowMutationsData = 2;
 getGeneImages = {'all'};
 do_mutation_and_clinical_analysis = 0;
 %% bc - sheba
-filename = '\\metlab26\D\Users\Hila Shacham\Candidate Genes\Sheba\Output\list 4 full\list 4 full gene expression table.xlsx';
-filename_km = '\\metlab26\D\Users\Hila Shacham\breast cancer sources\brca_metabric\data_clinical_patient.xlsx';
+%filename = '\\metlab26\D\Users\Hila Shacham\Candidate Genes\Sheba\Output\list 4 full\list 4 full gene expression table.xlsx';
+filename = 'D:\InPut\Hila\Candidate genes\breast cancer sources\Sheba gene expression 13_4_2020.xlsx';
+%filename_km = '\\metlab26\D\Users\Hila Shacham\breast cancer sources\brca_metabric\data_clinical_patient.xlsx';
+filename_km = 'D:\InPut\Hila\Candidate genes\breast cancer sources\bioportal\data_clinical_patient.xlsx';
 sheet_name = 1;
 do_genes_expression_calculations = 1;
 do_clinical_calculations = 1;
 do_subtype_histograms = 0;
 use_days_not_months = 0;
-colTimeData = 2;
-colSurvivalStatus = 4;
-colCancerSubtypes = 16;
+colTimeData = 13;
+colSurvivalStatus = 17;
+colCancerSubtypes = 15;
 colPatientsNamesKM = 1;
 livingStatusStr = "Living";
 deceasedButNotCancerStr = "Died of Other Causes"; 
 timeCutOff = 120;
-outputDir = '\\metlab26\D\Users\Hila Shacham\Candidate Genes\Sheba\Output\list 4 full';
+%outputDir = '\\metlab26\D\Users\Hila Shacham\Candidate Genes\Sheba\Output\list 4 full';
+outputDir = 'D:\InPut\Hila\Candidate genes\Sheba Output\13_4_2020';
 extraClinicalDataCellMatrix = [];
 do_mutation_analysis = 0;
 colMutationsTypes = 9;
@@ -633,7 +641,7 @@ gene_nomenclature = "both";
 gene_name = "STAT3";
 use_cbioportal_not_lab_std = 1;
 rowMutationsData = 3;
-%getGeneImages = {'none'};
+getGeneImages = {'all'};
 do_mutation_and_clinical_analysis = 0;
 do_km_by_clustering = 0;
 
@@ -645,12 +653,12 @@ do_km_by_clustering = 0;
 %for i = 1:length(gene_names{1})
 %    gene_name = gene_names{1}{i};
 Candidate_Genes(filename, filename_km, sheet_name,...
-    do_genes_expression_calculations, do_clinical_calculations, ... 
+    do_genes_expression_calculations, do_km_analysis, ... 
     do_subtype_histograms, use_cbioportal_not_lab_std,...
     gene_nomenclature, gene_name, colPatientsNamesKM,...
     colTimeData, colSurvivalStatus, colCancerSubtypes, livingStatusStr, ...
     deceasedButNotCancerStr, timeCutOff, use_days_not_months, outputDir,...
     extraClinicalDataCellMatrix, do_mutation_analysis, colMutationsTypes,...
     colPatientsNamesMutation, colGeneNamesMut, filename_mut, rowMutationsData, ...
-    getGeneImages, do_mutation_and_clinical_analysis, do_km_by_clustering)
+    getGeneImages, do_km_by_mutation_and_expression, do_km_by_clustering)
 %end

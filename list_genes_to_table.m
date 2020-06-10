@@ -15,13 +15,14 @@ if dir == 0
 end
 xls_name = fullfile(dir, 'result.xlsx');
 % v1 - [~,~,expression_table] = xlsread(fullfile(path_exp, file_exp));
-expression_table = readtable(fullfile(path_exp, file_exp), 'FileType', 'spreadsheet'); 
+expression_table = readtable(fullfile(path_exp, file_exp), 'FileType', 'spreadsheet', 'PreserveVariableNames', true); 
 fullfile_gene_lst = fullfile(path_gene_lst, file_gene_lst);
 [~,sheets] = xlsfinfo(fullfile_gene_lst);
 % v1 - gene_names = expression_table(:, 1); 
 gene_names = expression_table.Hugo_Symbol; 
 
 % v1 - table1 = expression_table(1,:);
+disp('Done!');
 
 %%
 for  sheet = sheets

@@ -9,14 +9,14 @@
 
 % * filename - fullpath of the gene expressions excel file 
 % (I call it gene expression, but it can be rna expression, cna expression etc. as long as it 
-% has the same table structure as gene expression).
+% has the same table structure as the gene expression table).
 % * sheet_name - current sheet to work on in filename. Either the exact name
 % or number.
 % * filename_km - fullpath of the clinical data with survival analysis.
 % * do_genes_expression_calculations - Whether to do gene expressions
 % calculations from filename.
-% * do_km_analysis - Whether to do kaplan meier analysis based on driver and
-% canditate genes expressions according to survival data found in filename_km,
+% * do_km_analysis - Whether to do kaplan meier analysis based on driver gene and
+% candidate genes expressions according to survival data found in filename_km,
 % * do_subtype_histograms - whether to do cancer's subtypes histogram calculations. 
 % * use_days_not_months - whether to use the 'days' column (OS_DAYS)  in
 % filname_km instead of the months column (OS_MONTHS). Only reason to use - more data
@@ -41,7 +41,8 @@
 % * extraClinicalDataCellMatrix - A n*2 matrix, where the first column
 % represents the name of the specific clinical data, like ETHNICITY, 
 % and the 2nd column represents the column number in filename_km. E.g
-% -{'sex', 2; 'cns status', 8; 'testicular involvement', 9};
+% -{'sex', 2; 'cns status', 8; 'testicular involvement', 9}; -  not yet
+% applicable
 % * do_mutation_analysis - whether to do mutation analysis.
 % * colMutationsTypes - column in filename_mut with the different mutations
 % classifications (e.g. - Variant_Classification)
@@ -67,7 +68,7 @@
 % {'all'}, and if no image is desired write {'none'}.
 % * do_km_by_mutation_and_expression - boolean. Whether to calculate KM of the data
 % where expression levels and mutations of the genes are combined.
-% * do_km_by_clustering - Whether to do kaplan meier calculations based on
+% * do_km_by_clustering - Whether to do Kaplan Meier calculations based on
 % clustering of filename. Needs filename_km for survival data. 
 
 function Candidate_Genes(filename, filename_km, sheet_name, ...
@@ -79,6 +80,7 @@ function Candidate_Genes(filename, filename_km, sheet_name, ...
     extraClinicalDataCellMatrix, do_mutation_analysis, colMutationsTypes,...
     colPatientsNamesMutation, colGeneNamesMut, filename_mut, rowMutationsData, ...
     getGeneImages, do_km_by_mutation_and_expression, do_km_by_clustering)
+disp('Code running will print "Done!" when finished');
 mkdir(outputDir);
 !taskkill -f -im EXCEL.exe
 %% -------- Reading the data
@@ -90,22 +92,27 @@ mkdir(outputDir);
     % patientsNames - A character cell array of the patients IDs.
     % geneNames - A character cell array with all the genes.
 
-    fileTable = readtable(filename, 'FileType', 'spreadsheet', 'ReadVariableNames', ...
-        true, 'ReadRowNames', true, 'PreserveVariableNames', true, 'Sheet', ...
-        sheet_name, 'UseExcel', true);
-    geneNames = fileTable.Properties.RowNames;
-
-
+    first_row = readmatrix(filename, 'FileType', 'spreadsheet', 'Range', ...
+        '1:1', 'OutputType', 'char', 'Sheet', 1, 'UseExcel', true);
+    first_col = readmatrix(filename, 'FileType', 'spreadsheet', 'Range', ...
+        'A:A', 'OutputType', 'char', 'Sheet', 1, 'UseExcel', true);
+    
+    
     if strcmp(gene_nomenclature, 'entrez') 
-        numericData = fileTable(:,2:end).Variables; 
-        patientsNames = fileTable.Properties.VariableNames;
-        geneNames = num2cell(geneNames);
+        numericData = readmatrix(filename, 'FileType', 'spreadsheet', ...
+            'Range', 'B2', 'OutputType', 'double', 'Sheet', 1, 'UseExcel', true); 
+        patientsNames = first_row(2:end);
+        geneNames = first_col;
     elseif strcmp(gene_nomenclature, 'hugo')
-        numericData = fileTable.Variables;
-        patientsNames = fileTable.Properties.VariableNames;
+        numericData = readmatrix(filename, 'FileType', 'spreadsheet', ...
+            'Range', 'B2', 'OutputType', 'double', 'Sheet', 1, 'UseExcel', true);
+        patientsNames = first_row(2:end);
+        geneNames = first_col(2:end);
     elseif strcmp(gene_nomenclature, 'both')
-        numericData = fileTable(:,2:end).Variables;
-        patientsNames = fileTable.Properties.VariableNames(2:end);
+        numericData = readmatrix(filename, 'FileType', 'spreadsheet', ...
+            'Range', 'C2', 'OutputType', 'double', 'Sheet', 1, 'UseExcel', true);
+        patientsNames = first_row(3:end);
+        geneNames = first_col(2:end);
     end
 
 
@@ -137,7 +144,8 @@ mkdir(outputDir);
     numericData = zscore(numericData, 0, 1); % Might contain 'NaN' data. 
 
 % -------- Reading clinical data
-if do_km_analysis || do_km_by_mutation_and_expression || do_km_by_clustering
+if do_km_analysis || do_km_by_mutation_and_expression || ...
+        do_km_by_clustering || do_subtype_histograms
 
     [numericDataKM, txtDataKM] = xlsread(filename_km, 1);
     

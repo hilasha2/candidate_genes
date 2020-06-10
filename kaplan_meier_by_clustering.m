@@ -73,7 +73,7 @@ for idx = 1:numGroups
         patientsNamesKM, timeData, cens, patientsInGroups);
     timeVar = [timeVar; timeGroup];
     censVar = [censVar; censGroup];
-    group = repmat(idx, length(patientsInGroups), 1);
+    group = repmat(idx, length(timeGroup), 1);
     groupVar = [groupVar; group]; 
 end
 % event = 1, cens = 0 - so the cens' matrices have to be reversed.

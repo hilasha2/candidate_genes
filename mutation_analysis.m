@@ -11,7 +11,17 @@ function mutation_analysis(filename_mut, numericData, geneNames, geneNamesMut, p
     
 
     barPlotAvgExpressionOfMainGeneMutatedVsNot(numericData, geneNamesMut, ...
-    patientsNames, patientsNamesMut, mainGeneName, mainGeneIdx)
+    patientsNames, patientsNamesMut, mainGeneName, mainGeneIdx);
+
+    % plotting a bar graph for all of the genes and not just for the main gene
+    fileOutput = fullfile(outputDir,'barplots_pvalues_mutation_vs_no_mutation.xlsx');
+    title = sprintf('Mean gene expressions of patients with mutation in %s vs no mutation in %s', ...
+        mainGeneName, mainGeneName);
+    [~, ~, expressionMut, expressionNonMut] ...
+        = getSplitNumericDataByMutationInMainGene(numericData, mainGeneName, ...
+        geneNamesMut, patientsNames, patientsNamesMut, 'all');
+    getBarPlot(expressionMut,expressionNonMut, geneNames, title,...
+        filename_mut, mainGeneName, fileOutput, 'mutation');
 end
 
 
@@ -123,18 +133,13 @@ function barPlotMutatedGenesVsMutatedMainGene(filename_mut, geneNames, geneNames
    xlswrite(fileOutput, table);
 end
 
-% Comparing average of expression of patients with mutations in main gene
+% Comparing average expression of patients with mutations in main gene
 % vs. no mutation.
 function barPlotAvgExpressionOfMainGeneMutatedVsNot(numericData, geneNamesMut, ...
     patientsNames, patientsNamesMut, mainGeneName, mainGeneIdx)
-[patientsWithMutatedGene, patientsWithNonMutatedGene] = ...
-    splitPatientsByGeneMutation(mainGeneName, geneNamesMut, patientsNames, patientsNamesMut);
-patientsIdxMut= contains(patientsNames, patientsWithMutatedGene);
-patientsIdxNonMut= contains(patientsNames, patientsWithNonMutatedGene);
-expressionMut = numericData(mainGeneIdx, patientsIdxMut);
-expressionNonMut = numericData(mainGeneIdx, patientsIdxNonMut);
-avgMut = mean(expressionMut);
-avgNonMut = mean(expressionNonMut);
+[avgMut, avgNonMut, expressionMut, expressionNonMut] ...
+    = getSplitNumericDataByMutationInMainGene(numericData, mainGeneName, ...
+    geneNamesMut, patientsNames, patientsNamesMut, 'main_gene', mainGeneIdx);
 histData = [avgMut, avgNonMut]; 
 [~, pvalue] = ttest2(expressionMut, expressionNonMut);
 
@@ -157,6 +162,27 @@ plotTitle = sprintf('Average of %s expression of patients with mutation vs. non 
                 annotation('textbox', dim, 'String', str, 'FitBoxToText','on');
 
 end
+
+function [avgMut, avgNonMut, expressionMut, expressionNonMut] ...
+    = getSplitNumericDataByMutationInMainGene(numericData, mainGeneName, ...
+    geneNamesMut, patientsNames, patientsNamesMut, whichRowsToTake, varargin)
+[patientsWithMutatedGene, patientsWithNonMutatedGene] = ...
+    splitPatientsByGeneMutation(mainGeneName, geneNamesMut, ...
+    patientsNames, patientsNamesMut);
+patientsIdxMut = contains(patientsNames, patientsWithMutatedGene);
+patientsIdxNonMut = contains(patientsNames, patientsWithNonMutatedGene);
+switch whichRowsToTake 
+    case 'all'
+        expressionMut = numericData(:, patientsIdxMut);
+        expressionNonMut = numericData(:, patientsIdxNonMut);
+    case 'main_gene'
+        expressionMut = numericData(varargin{1}, patientsIdxMut);
+        expressionNonMut = numericData(varargin{1}, patientsIdxNonMut);
+end
+avgMut = mean(expressionMut);
+avgNonMut = mean(expressionNonMut);
+end
+
 
 function [patientsWithMutatedGene, patientsWithNonMutatedGene] = ...
     splitPatientsByGeneMutation(candidateGene, geneNamesMut, patientsNames, patientsNamesMut) % TODO - there's a problem here.
@@ -205,3 +231,4 @@ tmp = sprintf('%f*', rowDoubleArray);
 tmp(end) = [];
 cellArray = regexp(tmp, '*', 'split');
 end
+
