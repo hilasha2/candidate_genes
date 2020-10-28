@@ -1,84 +1,80 @@
 function expression_data_analysis(filename, outputDir, numericData,...
     geneNames, patientsNames, geneIdx, gene_name, structNumericDataH, ...
-    structNumericDataL, structPatientsH)
+    structNumericDataL, structPatientsH, printAllFigures)
 
 % -------- Clustergram & Zscore
 
-getClustergram(numericData, geneNames, patientsNames,...
-    'zscored', 'clustergram on all patients');
-title = sprintf('clustergram on all 30%% top %s patients', gene_name);
-getClustergram(structNumericDataH.h30, geneNames, structPatientsH.h30,...
-    'zscored top 30%', title); 
-title = sprintf('clustergram on all 20%% top %s patients', gene_name);
-getClustergram(structNumericDataH.h20, geneNames, structPatientsH.h20,...
-    'zscored top 20%', title);
-title = sprintf('clustergram on all 10%% top %s patients', gene_name);
-getClustergram(structNumericDataH.h10, geneNames, structPatientsH.h10,...
-    'zscored top 10%', title);
-title = sprintf('clustergram on all 80%% top %s patients', gene_name);
-getClustergram(structNumericDataH.h80, geneNames, structPatientsH.h80,...
-    'zscored top 80%', title); 
-title = sprintf('clustergram on all 70%% top %s patients', gene_name);
-getClustergram(structNumericDataH.h70, geneNames, structPatientsH.h70,...
-    'zscored top 70%', title); 
-
-% ---------- TSNE
-
-% getTsne(numericData, numGroups,...
-%     'TSNE','TSNE with KMeans');
-% numGroupsTop30 = 4;
-% getTsne(top30Data, numGroupsTop30,...
-%     'TSNE top 30%','TSNE top 30% with KMeans');
-
+if eq(printAllFigures, 1)
+    getClustergram(numericData, geneNames, patientsNames,...
+        'normalized gene expression of all patients', 'clustergram on all patients');
+    [titleCluster, titleZScore] = getClustergramTitles(30, 'high', gene_name);
+    getClustergram(structNumericDataH.h30, geneNames, structPatientsH.h30,...
+        titleZScore, titleCluster); 
+    
+    [titleCluster, titleZScore] = getClustergramTitles(20, 'high', gene_name);
+    getClustergram(structNumericDataH.h20, geneNames, structPatientsH.h20,...
+        titleZScore, titleCluster);
+    
+    [titleCluster, titleZScore] = getClustergramTitles(10, 'high', gene_name);
+    getClustergram(structNumericDataH.h10, geneNames, structPatientsH.h10,...
+        titleZScore, titleCluster);
+    
+    [titleCluster, titleZScore] = getClustergramTitles(20, 'low', gene_name);
+    getClustergram(structNumericDataH.h80, geneNames, structPatientsH.h80,...
+        titleZScore, titleCluster); 
+    
+    [titleCluster, titleZScore] = getClustergramTitles(30, 'low', gene_name);
+    getClustergram(structNumericDataH.h70, geneNames, structPatientsH.h70,...
+        titleZScore, titleCluster); 
+end
 
 % ---------- Bar and Box plots
 
-fileOutput = fullfile(outputDir,'barplots_pvalues_R70_H30.xlsx');
-title = sprintf('Mean gene expressions of 30 percent patients with high %s vs rest', ...
-    gene_name);
-getBarPlot(structNumericDataH.h30, structNumericDataL.l70, geneNames, title, ...
-    filename, gene_name, fileOutput, 'expression', 30);
-title = sprintf('Box plot of gene expressions of 30 percent patients with high %s vs rest',...
-    gene_name);
-getBoxPlot(structNumericDataH.h30, structNumericDataL.l70, geneNames, title);
+% ------- Box plots
 
-fileOutput = fullfile(outputDir,'barplots_pvalues_R80_H20.xlsx');
-title = sprintf('Mean gene expressions of 20 percent patients with high %s vs rest', ...
-    gene_name);
-getBarPlot(structNumericDataH.h20, structNumericDataL.l80, geneNames, title, ...
-    filename, gene_name, fileOutput, 'expression', 20);
-title = sprintf('Box plot of gene expressions of 20 percent patients with high %s vs rest',...
-    gene_name);
-getBoxPlot(structNumericDataH.h20, structNumericDataL.l80, geneNames, title);
+if eq(printAllFigures, 1)
+    boxTitle = getBoxPlotTitle(30, 'high', gene_name);
+    getBoxPlot(structNumericDataH.h30, structNumericDataL.l70, ...
+        geneNames, boxTitle);
 
-fileOutput = fullfile(outputDir,'barplots_pvalues_R90_H10.xlsx');
-title = sprintf('Mean gene expressions of 10 percent patients with high %s vs rest', ...
-    gene_name);
-getBarPlot(structNumericDataH.h10, structNumericDataL.l90, geneNames, title, ...
-    filename, gene_name, fileOutput, 'expression', 10);
-title = sprintf('Box plot of gene expressions of 10 percent patients with high %s vs rest',...
-    gene_name);
-getBoxPlot(structNumericDataH.h10, structNumericDataL.l90, geneNames,...
-    title);
+    boxTitle = getBoxPlotTitle(30, 'low', gene_name);
+    getBoxPlot(structNumericDataH.h70, structNumericDataL.l30, ....
+        geneNames, boxTitle);
 
-fileOutput = fullfile(outputDir,'barplots_pvalues_L20_R80.xlsx');
-title = sprintf('Mean gene expressions of 20 percent patients with low %s vs rest', ...
-    gene_name);
-getBarPlot(structNumericDataH.h80, structNumericDataL.l20, geneNames, title,...
-    filename, gene_name, fileOutput, 'expression', 80);
-title = sprintf('Box plot of gene expressions of 20 percent patients with low %s vs rest',...
-    gene_name);
-getBoxPlot(structNumericDataH.h80, structNumericDataL.l20, geneNames, title);
+    boxTitle = getBoxPlotTitle(20, 'high', gene_name);
+    getBoxPlot(structNumericDataH.h20, structNumericDataL.l80, ....
+        geneNames, boxTitle);
 
-fileOutput = fullfile(outputDir,'barplots_pvalues_L30_R70.xlsx');
-title = sprintf('Mean gene expressions of 30 percent patients with low %s vs rest', ...
-    gene_name);
-getBarPlot(structNumericDataH.h70, structNumericDataL.l30, geneNames, title, ...
-    filename, gene_name, fileOutput, 'expression', 70);
-title = sprintf('Box plot of gene expressions of 30 percent patients with low %s vs rest',...
-    gene_name);
-getBoxPlot(structNumericDataH.h70, structNumericDataL.l30, geneNames, title);
+    boxTitle = getBoxPlotTitle(20, 'low', gene_name);
+    getBoxPlot(structNumericDataH.h80, structNumericDataL.l20, ...
+        geneNames, boxTitle);
 
+    boxTitle = getBoxPlotTitle(10, 'high', gene_name);
+    getBoxPlot(structNumericDataH.h10, structNumericDataL.l90, ....
+        geneNames, boxTitle);
+end
+
+% ------- Barplots
+
+[barTitle, barFileName] = getBarTitleAndFileName(30, 'high', gene_name, outputDir);
+getBarPlot(structNumericDataH.h30, structNumericDataL.l70, geneNames, barTitle, ...
+    filename, gene_name, barFileName, 'expression', printAllFigures, 30);
+
+[barTitle, barFileName] = getBarTitleAndFileName(30, 'low', gene_name, outputDir);
+getBarPlot(structNumericDataH.h70, structNumericDataL.l30, geneNames, barTitle, ...
+    filename, gene_name, barFileName, 'expression', printAllFigures, 70);
+
+[barTitle, barFileName] = getBarTitleAndFileName(20, 'high', gene_name, outputDir);
+getBarPlot(structNumericDataH.h20, structNumericDataL.l80, geneNames, barTitle, ...
+    filename, gene_name, barFileName, 'expression', printAllFigures, 20);
+
+[barTitle, barFileName] = getBarTitleAndFileName(20, 'low', gene_name, outputDir);
+getBarPlot(structNumericDataH.h80, structNumericDataL.l20, geneNames, barTitle,...
+    filename, gene_name, barFileName, 'expression', printAllFigures, 80);
+
+[barTitle, barFileName] = getBarTitleAndFileName(10, 'high', gene_name, outputDir);
+getBarPlot(structNumericDataH.h10, structNumericDataL.l90, geneNames, barTitle, ...
+    filename, gene_name, barFileName, 'expression', printAllFigures, 10);
 
 end
 
@@ -100,22 +96,6 @@ addTitle(CGobj, titleCG);
 end
 
 
-% TODO - improve this function. 
-% function getTsne(numericData, numGroups, titleTsne, titleKmeans)
-% zscored = zscore(numericData'); % zscored - n * p 
-% wcoeff = pca(zscored); % wcoeff - p * p, columns - coefficients for one principal component.
-% tsne_z = tsne(wcoeff,'Distance','euclidean');
-% cls = clusterdata(tsne_z(:,1:2),'maxclust',numGroups,'distance','euclidean');
-% figure('Name', titleTsne, 'visible', 'off');
-% gscatter(tsne_z(:,1),tsne_z(:,2),cls)
-% title(titleTsne)
-% idx = kmeans(tsne_z(:,1:2),numGroups); % kmeans clustering partition the observations, idx - n * 1.
-% figure('Name', titleKmeans, 'visible', 'off');
-% gscatter(tsne_z(:,1),tsne_z(:,2),idx)
-% title(titleKmeans)
-% end
-
-
 function getBoxPlot(topData, lowData, geneNames, titlePlot)
 numLbls = length(geneNames);
 figure('Name', titlePlot, 'visible', 'off');
@@ -130,4 +110,34 @@ xtickangle(90);
 xlabel('Gene Names');
 ylabel('Expression of Genes');
 title(titlePlot);
+end
+
+
+function [titleCluster, titleZScore] = getClustergramTitles(numPercentage, strLowOrHigh, geneName)
+titleCluster = sprintf('clustergram on %u%% patients with %s expression of %s', ...
+    numPercentage, strLowOrHigh, geneName);
+titleZScore = sprintf('normalized gene expression of %u%% patients with %s %s expression', ...
+    numPercentage, strLowOrHigh, geneName);
+end
+
+
+
+function boxTitle = getBoxPlotTitle(numPercentage, strLowOrHigh, geneName)
+boxTitle = sprintf('Boxplot of average gene expressions of %u%% patients with %s %s expression vs rest of patients',...
+    numPercentage, strLowOrHigh, geneName);
+end
+
+
+function [barTitle, barFileName] = getBarTitleAndFileName(numPercentage, strLowOrHigh, geneName, outputDir)
+barTitle = sprintf('Barplot of average gene expressions of %u%% patients with %s %s expression vs rest of patients',...
+    numPercentage, strLowOrHigh, geneName);
+if strcmp(strLowOrHigh, 'high')
+    fileName = sprintf('barplots_pvalues_R%u_H%u.xlsx', ...
+        100-numPercentage, numPercentage);
+   
+elseif strcmp(strLowOrHigh, 'low')
+    fileName = sprintf('barplots_pvalues_L%u_R%u.xlsx', ...
+        numPercentage, 100-numPercentage);
+end
+ barFileName = fullfile(outputDir,fileName);
 end

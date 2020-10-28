@@ -64,8 +64,10 @@
 % 1 is cbioportal, 0 is lab standard.
 % * rowMutationsData - The row in filename_mut where the data begins.
 % * getGeneImages - Char cell array of gene names whose output images are desired, i.e.
-% {'ODC1', 'BCAT1', 'COL29A1'}. If all gene images are desired then write
-% {'all'}, and if no image is desired write {'none'}.
+% {'ODC1', 'BCAT1', 'COL29A1'} (do not include the driver gene). 
+% If all gene images are desired then write - 
+% {'all'}, and if no image is desired write {'none'}. 
+% Predicate - no gene is called 'none' or 'all'.
 % * do_km_by_mutation_and_expression - boolean. Whether to calculate KM of the data
 % where expression levels and mutations of the genes are combined.
 % * do_km_by_clustering - Whether to do Kaplan Meier calculations based on
@@ -81,7 +83,12 @@ function Candidate_Genes(filename, filename_km, sheet_name, ...
     colPatientsNamesMutation, colGeneNamesMut, filename_mut, rowMutationsData, ...
     getGeneImages, do_km_by_mutation_and_expression, do_km_by_clustering)
 disp('Code running will print "Done!" when finished');
-mkdir(outputDir);
+% Checking some variables 
+assert_msg = sprintf("Length of variable 'getGeneImages' is 0." + ...
+    "\nShould be {'none'}, {'all'}, or cell array with gene names.");
+assert((iscell(getGeneImages))&&(~isempty(getGeneImages)), ...
+    assert_msg);
+% Close any opened excel file.
 !taskkill -f -im EXCEL.exe
 %% -------- Reading the data
 
@@ -225,15 +232,18 @@ close all hidden;
 
 [structNumericDataH, structNumericDataL, ...
     structPatientsH, structPatientsL] = getSplitData(numericData, patientsNames, geneIdx);
-
+%% -------- Handling figure printing configurations
+% Do we print all figures? none? or just some?
+print_all = unique(eq(getGeneImages{1}, "all"));
+print_none =  unique(eq(getGeneImages{1}, "none"));
 
 %% -------- Genes expressions calculations
 if do_genes_expression_calculations
     expression_data_analysis(filename, outputDir, numericData, geneNames, patientsNames, ...
-    geneIdx, gene_name, structNumericDataH, structNumericDataL, structPatientsH);
+    geneIdx, gene_name, structNumericDataH, structNumericDataL, structPatientsH, print_all);
 end
 
-%% --------- Clinical calculations
+%% --------- Kaplan Meier analysis by expression
 if do_km_analysis
     kaplan_meier_data_analysis(filename_km, outputDir, numericData, geneNames, patientsNames, ....
     patientsNamesKM, timeData, cens, timeCutOff, structPatientsH, structPatientsL, ...
@@ -252,7 +262,7 @@ if do_mutation_analysis
         patientsNames, patientsNamesMut, gene_name, geneIdx, outputDir);
 end
 
-%% ---------- Mutation and Clinical Data calculations
+%% ---------- Mutation and Kaplan Meier calculations
 if do_km_by_mutation_and_expression
    kaplan_meier_and_mutation_analysis(filename_km, filename_mut, outputDir, gene_name, numericData, ...
     patientsNames, patientsNamesMut, patientsNamesKM, geneNames, geneNamesMut, timeData, cens, timeCutOff); 
@@ -268,30 +278,25 @@ end
 
 FolderName = strcat(outputDir,'\graphs');   % Destination folder for plots
 mkdir(FolderName); 
-FigList = findobj(allchild(0), 'flat', 'Type', 'figure'); % Getting all the opened figures, from last created to first.
+% Getting all the opened figures, from last created to first.
+FigList = findobj(allchild(0), 'flat', 'Type', 'figure');
 FigList = flip(FigList); % Fliping the order of the figures.
 
-if iscell(getGeneImages)
-    if isempty(getGeneImages) 
-        disp('Length of variable "getGeneImages" is 0, no images saved'); 
-    else
-        if unique(eq(getGeneImages{1}, "none"))
-            disp('No images saved');
-        else
-            if unique(eq(getGeneImages{1}, "all"))
-                    disp("Saving all images");
-            end
-            for iFig = 1:length(FigList)
-                FigHandle = FigList(iFig);
-                FigName = get(FigHandle, 'Name');
-                % prerequisite - no gene is called "all". 
-                if contains(FigName, getGeneImages) || unique(eq(getGeneImages{1}, "all"))
-                    disp(FigName);
-                    save_figure(FigHandle, FigName, FolderName)     
-                end
-            end
+if unique(eq(getGeneImages{1}, "none"))
+    disp('No images saved');
+else
+    if unique(eq(getGeneImages{1}, "all"))
+        disp("Saving all images");
+    end
+    for iFig = 1:length(FigList)
+        FigHandle = FigList(iFig);
+        FigName = get(FigHandle, 'Name');
+        % prerequisite - no gene is called "all". 
+        if contains(FigName, getGeneImages) || unique(eq(getGeneImages{1}, "all"))
+            disp(FigName);
+            save_figure(FigHandle, FigName, FolderName)     
         end
-    end 
+    end
 end
 
 disp('Done!');
