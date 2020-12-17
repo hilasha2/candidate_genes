@@ -190,7 +190,8 @@ if do_km_analysis || do_km_by_mutation_and_expression || ...
     % censoring data.
     cens = (boolDied == 1) | (boolLiving == 1) | (timeData > timeCutOff); 
     
-    patientsNames = patientsNamesFromDiffDatasets(patientsNames, patientsNamesKM, use_cbioportal_not_lab_std);
+    patientsNames = patientsNamesFromDiffDatasets(patientsNames, ...
+        patientsNamesKM, use_cbioportal_not_lab_std);
 end
 
 % -------- Reading Mutation Data
@@ -225,7 +226,8 @@ if do_mutation_analysis || do_km_by_mutation_and_expression
     mutationsTypes(nanIndices) = [];
     patientsNamesMut(nanIndices) = [];
     
-    patientsNamesMut = patientsNamesFromDiffDatasets(patientsNamesMut, patientsNames, use_cbioportal_not_lab_std);
+    patientsNamesMut = patientsNamesFromDiffDatasets(patientsNamesMut, ...
+        patientsNames, use_cbioportal_not_lab_std);
 end
 
 close all hidden;
@@ -234,20 +236,22 @@ close all hidden;
     structPatientsH, structPatientsL] = getSplitData(numericData, patientsNames, geneIdx);
 %% -------- Handling figure printing configurations
 % Do we print all figures? none? or just some?
-print_all = unique(eq(getGeneImages{1}, "all"));
-print_none =  unique(eq(getGeneImages{1}, "none"));
+print_config.print_all = unique(eq(getGeneImages{1}, "all"));
+print_config.print_none =  unique(eq(getGeneImages{1}, "none"));
+print_config.genes2print = getGeneImages;
 
 %% -------- Genes expressions calculations
 if do_genes_expression_calculations
     expression_data_analysis(filename, outputDir, numericData, geneNames, patientsNames, ...
-    geneIdx, gene_name, structNumericDataH, structNumericDataL, structPatientsH, print_all);
+    geneIdx, gene_name, structNumericDataH, structNumericDataL, structPatientsH, ...
+    print_config.print_all);
 end
 
 %% --------- Kaplan Meier analysis by expression
 if do_km_analysis
     kaplan_meier_data_analysis(filename_km, outputDir, numericData, geneNames, patientsNames, ....
     patientsNamesKM, timeData, cens, timeCutOff, structPatientsH, structPatientsL, ...
-    gene_name);
+    gene_name, print_config);
 end 
 
 %% --------- Subtype calculations
@@ -264,14 +268,16 @@ end
 
 %% ---------- Mutation and Kaplan Meier calculations
 if do_km_by_mutation_and_expression
-   kaplan_meier_and_mutation_analysis(filename_km, filename_mut, outputDir, gene_name, numericData, ...
-    patientsNames, patientsNamesMut, patientsNamesKM, geneNames, geneNamesMut, timeData, cens, timeCutOff); 
+   kaplan_meier_and_mutation_analysis(filename_km, filename_mut, ...
+       outputDir, gene_name, numericData, patientsNames, ...
+       patientsNamesMut, patientsNamesKM, geneNames, geneNamesMut, ...
+       timeData, cens, timeCutOff, print_config); 
 end
 
 %% ---------- Kaplan Meier analysis by clustering
 if do_km_by_clustering
        kaplan_meier_by_clustering(outputDir, numericData, geneNames, patientsNames, ....
-    patientsNamesKM, timeData, cens, timeCutOff)
+    patientsNamesKM, timeData, cens, timeCutOff, print_config.print_all);
 end
 
 %% ---------- Saving all opened figures as images

@@ -1,24 +1,26 @@
 function kaplan_meier_by_clustering(outputDir, numericData, geneNames, patientsNames, ....
-    patientsNamesKM, timeData, cens, timeCutOff) 
+    patientsNamesKM, timeData, cens, timeCutOff, printAllFigures) 
 
 for numGroups = 2:6
     clusteringPlotTitle = sprintf('Clustering by k-means, numGroups = %d', numGroups);
-    kmPlotTitle = sprintf('Kaplan of patients clustered by K-mean, numGroups = %d', numGroups); 
+    kmPlotTitle = sprintf('Kaplan Meier of patients clustered by K-mean, numGroups = %d', numGroups); 
     clustering_method = 'kmeans only';
-    fileName = sprintf('gene_averages_per_group_%d_groups_clustered_by_kmeans.xlsx', numGroups); 
+    fileName = sprintf('gene_exp_averages_per_group_%d_groups_clustered_by_kmeans.xlsx', numGroups); 
     fileOutput = fullfile(outputDir,fileName); 
     kaplan_meier_by_clustering_method(numericData, patientsNames, ....
     patientsNamesKM, timeData, cens, timeCutOff, clusteringPlotTitle, ...
-    kmPlotTitle, numGroups, clustering_method, geneNames, fileOutput);
+    kmPlotTitle, numGroups, clustering_method, geneNames, fileOutput, ...
+    printAllFigures);
 
     clusteringPlotTitle = sprintf('Clustering by k-means after pca, numGroups = %d', numGroups);
     kmPlotTitle = sprintf('Kaplan of patients clustered by K-mean after pca, numGroups = %d', numGroups); 
     clustering_method = 'kmeans after pca';
-    fileName = sprintf('gene_averages_per_group_%d_groups_clustered_by_kmeans_after_pca.xlsx', numGroups);
+    fileName = sprintf('gene_exp_averages_per_group_%d_groups_clustered_by_kmeans_after_pca.xlsx', numGroups);
     fileOutput = fullfile(outputDir,fileName); 
     kaplan_meier_by_clustering_method(numericData, patientsNames, ....
     patientsNamesKM, timeData, cens, timeCutOff, clusteringPlotTitle, ...
-    kmPlotTitle, numGroups, clustering_method, geneNames, fileOutput);
+    kmPlotTitle, numGroups, clustering_method, geneNames, fileOutput, ...
+    printAllFigures);
 end
 end
 
@@ -26,19 +28,24 @@ end
 
 % ---
 % We cluster the patients by k-means
-function groupsIdx = getGroupsByKmeans(numericData, numGroups, plotTitle)
+function groupsIdx = getGroupsByKmeans(numericData, numGroups, ...
+    plotTitle, printAllFigures)
 groupsIdx = kmeans(numericData', numGroups); 
-plotScatteredGroups(numericData', groupsIdx, plotTitle)
+if printAllFigures
+    plotScatteredGroups(numericData', groupsIdx, plotTitle)
+end
 end
 
 % ---
 % Clustering patients where numericData is spanned by pca space. 
-function groupsIdx = getGroupsByKmeansAfterPca(numericData, numGroups, plotTitle)
+function groupsIdx = getGroupsByKmeansAfterPca(numericData, numGroups, ...
+    plotTitle, printAllFigures)
 % pca(groupsData) - rows, n - observations (patients), columns, p - variables (genes). 
 % groupsData = numericData' - n*p
 % dataInPcaSpace - n*p, pcaEigenvalues (coeff) - p*p
 [~,dataInPcaSpace] = pca(numericData'); % zscore(dataInPcaSpace) is zscore(groupsData*coeff);  
-groupsIdx = getGroupsByKmeans(dataInPcaSpace', numGroups, plotTitle);
+groupsIdx = getGroupsByKmeans(dataInPcaSpace', numGroups, plotTitle, ...
+    printAllFigures);
 end
 
 % ---
@@ -86,45 +93,60 @@ end
 
 % ---
 % Kaplan Meier function 
-function stats = kaplan_meier(TimeVar, EventVar, GroupVar, timeCutOff, titlePlot)
-[~, fh, stats] = MatSurv(TimeVar, EventVar, GroupVar, 'XLim', timeCutOff,...
-    'Title', titlePlot, 'NoRiskTable', false, 'PairwiseP', true, ...
-    'TitleOptions', {'FontSize', 11});
-fh.Name = titlePlot;
-fh.Visible = 'off';
+function stats = kaplan_meier(TimeVar, EventVar, GroupVar, timeCutOff, ...
+    titlePlot, printAllFigures)
+if printAllFigures
+    [~, fh, stats] = MatSurv(TimeVar, EventVar, GroupVar, 'XLim', timeCutOff,...
+        'Title', titlePlot, 'NoRiskTable', false, 'PairwiseP', true, ...
+        'TitleOptions', {'FontSize', 11});
+    fh.Name = titlePlot;
+    fh.Visible = 'off';
+else
+    [~, ~, stats] = MatSurv(TimeVar, EventVar, GroupVar, 'XLim', timeCutOff,...
+        'NoPlot', true,'PairwiseP', true);
+end
 end 
 
 % ---
 % Main function
 function kaplan_meier_by_clustering_method(numericData, patientsNames, ....
     patientsNamesKM, timeData, cens, timeCutOff, clusteringPlotTitle, ...
-    kmPlotTitle, numGroups, clustering_method, geneNames, outputFile)
+    kmPlotTitle, numGroups, clustering_method, geneNames, outputFile, ...
+    printAllFigures)
 switch clustering_method
     case 'kmeans only'
-        groupsIdx = getGroupsByKmeans(numericData, numGroups, clusteringPlotTitle);
+        groupsIdx = getGroupsByKmeans(numericData, numGroups, ...
+            clusteringPlotTitle, printAllFigures);
     case 'kmeans after pca'
-        groupsIdx = getGroupsByKmeansAfterPca(numericData, numGroups, clusteringPlotTitle);
+        groupsIdx = getGroupsByKmeansAfterPca(numericData, numGroups, ...
+            clusteringPlotTitle, printAllFigures);
     otherwise
         disp('No clustering method was procided')
         return
 end 
 [timeVar, censVar, groupVar] = ...
     get_time_cens_groups(patientsNames, patientsNamesKM, groupsIdx, timeData, cens);
-kaplan_meier(timeVar, censVar, groupVar, timeCutOff, kmPlotTitle)
-silhouetteTitle = sprintf('Silohouette of - %s', clusteringPlotTitle); 
-figure('Name', silhouetteTitle, 'visible', 'off');
-silhouette(numericData', groupsIdx);
-title(silhouetteTitle);
+kaplan_meier(timeVar, censVar, groupVar, timeCutOff, kmPlotTitle, ...
+    printAllFigures);
+if printAllFigures
+    silhouetteTitle = sprintf('Silohouette of - %s', clusteringPlotTitle); 
+    figure('Name', silhouetteTitle, 'visible', 'off');
+    silhouette(numericData', groupsIdx);
+    title(silhouetteTitle);
+end
 if(numGroups == 2)
     [averages_per_group, ~, stde_per_group] =...
         descriptiveStatisticsForGroups(geneNames, numericData, groupsIdx, outputFile);
     patientsGroups(patientsNames, groupsIdx, outputFile);
-    meanGeneExpressionBarPlot(geneNames, averages_per_group, ....
-    stde_per_group, numGroups, clustering_method)
     divideGenesAndAvereageGeneExpressionIntoGroups ...
         (geneNames, averages_per_group, numGroups, clustering_method, ...
         outputFile);
-    pearsonCorr(groupsIdx, numericData, geneNames, numGroups, clustering_method)
+    if printAllFigures
+        meanGeneExpressionBarPlot(geneNames, averages_per_group, ....
+        stde_per_group, numGroups, clustering_method);
+        pearsonCorr(groupsIdx, numericData, geneNames, numGroups, ...
+            clustering_method);
+    end
 end
 end 
 %% ---- Functions for analysing the data after the clustering.
