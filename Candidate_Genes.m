@@ -143,12 +143,13 @@ assert((iscell(getGeneImages))&&(~isempty(getGeneImages)), ...
     gene_name = char(string(gene_name));
     
     % Normalization of gene expression data - mean 0, stdv - 1 
-    % Zscore (normalization) on rows (per gene) - 
+    % Zscore (normalization) on columns (per patient) - 
     % Checked how cbioportal.org normalize their gene expression table and
-    % it's per gene. Gene expressions should be the same if you got data
-    % from cbioportal which was already zscored.
+    % it's most probably per patient. Gene expressions should be the same 
+    % if you got data from cbioportal which was already 
+    % normalized (RPKM normalization and said to be zscored).
     % TODO - check whether data from NIH should be treated differently. 
-    numericData = zscore(numericData, 0, 1); % Might contain 'NaN' data. 
+    % numericData = zscore(numericData, 0, 1); % Might contain 'NaN' data. 
 
 % -------- Reading clinical data
 if do_km_analysis || do_km_by_mutation_and_expression || ...

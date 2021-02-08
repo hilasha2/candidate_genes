@@ -138,9 +138,12 @@ if(numGroups == 2)
     [averages_per_group, ~, stde_per_group] =...
         descriptiveStatisticsForGroups(geneNames, numericData, groupsIdx, outputFile);
     patientsGroups(patientsNames, groupsIdx, outputFile);
+    % getting the average expression for each gene regardless of groups
+    % avgExpPerGene - [genes x 1]
+    avgExpPerGene = mean(numericData,2); 
     divideGenesAndAvereageGeneExpressionIntoGroups ...
-        (geneNames, averages_per_group, numGroups, clustering_method, ...
-        outputFile);
+        (geneNames, averages_per_group, avgExpPerGene, numGroups, ...
+        clustering_method, outputFile);
     if printAllFigures
         meanGeneExpressionBarPlot(geneNames, averages_per_group, ....
         stde_per_group, numGroups, clustering_method);
@@ -276,18 +279,18 @@ end
 
 % ---
 function divideGenesAndAvereageGeneExpressionIntoGroups ...
-    (geneNames, meanExpClustered, numGroups, clusteringMethod, ...
-    outputFile)
+    (geneNames, meanExpClustered, avgExpPerGene, numGroups, ...
+    clusteringMethod, outputFile)
 if numGroups ~= 2
     disp('Number of patients clusters must be 2!');
     return
 end
 % Dividing genes according to their expression: above/bellow average in group 1 and
-% above/bellow average in group 2. Average is 0.
-idx_pos_pos = meanExpClustered(:,1) > 0 & meanExpClustered(:,2) > 0;
-idx_pos_neg = meanExpClustered(:,1) > 0 & meanExpClustered(:,2) < 0;
-idx_neg_pos = meanExpClustered(:,1) < 0 & meanExpClustered(:,2) > 0;
-idx_neg_neg = meanExpClustered(:,1) < 0 & meanExpClustered(:,2) < 0;
+% above/bellow average in group 2.
+idx_pos_pos = meanExpClustered(:,1) > avgExpPerGene & meanExpClustered(:,2) > avgExpPerGene;
+idx_pos_neg = meanExpClustered(:,1) > avgExpPerGene & meanExpClustered(:,2) < avgExpPerGene;
+idx_neg_pos = meanExpClustered(:,1) < avgExpPerGene & meanExpClustered(:,2) > avgExpPerGene;
+idx_neg_neg = meanExpClustered(:,1) < avgExpPerGene & meanExpClustered(:,2) < avgExpPerGene;
 
 scatterPlotPosNeg(idx_pos_pos, geneNames, meanExpClustered,...
     "above", "above", clusteringMethod);
