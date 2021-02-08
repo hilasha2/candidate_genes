@@ -15,6 +15,12 @@ https://www.mathworks.com/matlabcentral/fileexchange/64582-matsurv
 > Creed, Jordan, et al. “MatSurv: Survival Analysis and Visualization in MATLAB.” Journal of Open Source Software, vol. 5, no. 46, The Open Journal, Feb. 2020, p. 1830, doi:10.21105/joss.01830.
 
 ### For future coders 
+Main code to start working with - 
+- Candidate_Genes.m
+
+Code for the GUI -
+- canddiate_genes3.mlapp (exported to candidateGenesGUI.m)
+
 Ignore -
 - candidate_genes.mlapp
 - candidate_genes2.mlapp
