@@ -9,7 +9,7 @@ The way the p-value was calculated is by log-rank test.
 Documentation of the way Chi2 was calculated can be found in this file:
 - Kaplan_Meier_Analysis.pdf
 
-And are based on this book:
+And is based on this book:
 Kleinbaum, D. G. (1998). Survival analysis, a self‐learning text. pg. 82. 
 
 The method for the Kaplan Meier calculation needs to be downloaded separately from:
