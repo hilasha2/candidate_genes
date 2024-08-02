@@ -1,4 +1,6 @@
 # candidate_genes
+A survival analysis of cancer patients using a Kaplan Meier estimator based on co-expression of modifier genes with either a tumor suppressor gene or oncogene. 
+This code includes a GUI for an easier run.
 
 Tutotrials can be found here: 
 
